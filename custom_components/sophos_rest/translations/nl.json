@@ -48,6 +48,42 @@
       },
       "certificate_expiry": {
         "name": "Certificaat {name} verloopt over"
+      },
+      "cpu": {
+        "name": "CPU-gebruik"
+      },
+      "memory": {
+        "name": "Geheugengebruik"
+      },
+      "swap": {
+        "name": "Swapgebruik"
+      },
+      "disk": {
+        "name": "Schijfgebruik"
+      },
+      "cpu_temperature": {
+        "name": "CPU-temperatuur"
+      },
+      "npu_temperature": {
+        "name": "NPU-temperatuur"
+      },
+      "last_boot": {
+        "name": "Laatst opgestart"
+      },
+      "firmware": {
+        "name": "Firmware"
+      },
+      "ips_version": {
+        "name": "IPS-signaturen"
+      },
+      "webcat_version": {
+        "name": "Webcategorie-database"
+      },
+      "traffic_in": {
+        "name": "Interface {name} ontvangen"
+      },
+      "traffic_out": {
+        "name": "Interface {name} verzonden"
       }
     },
     "binary_sensor": {
@@ -68,7 +104,25 @@
       },
       "hotfix_auto": {
         "name": "Automatische hotfixes"
+      },
+      "link": {
+        "name": "Interface {name} link"
       }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Live gegevens (SNMP)",
+        "description": "SNMP v2c-community van de firewall voor live gegevens (CPU, geheugen, temperatuur, linkstatus, verkeer). Leeg laten om SNMP uit te zetten.",
+        "data": {
+          "snmp_community": "SNMP-community",
+          "snmp_port": "SNMP-poort"
+        }
+      }
+    },
+    "error": {
+      "snmp_failed": "Geen antwoord van de SNMP-agent (controleer community, poort en de SNMP-instellingen op de firewall)"
     }
   }
 }

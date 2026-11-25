@@ -48,6 +48,42 @@
       },
       "certificate_expiry": {
         "name": "Certificate {name} expires in"
+      },
+      "cpu": {
+        "name": "CPU usage"
+      },
+      "memory": {
+        "name": "Memory usage"
+      },
+      "swap": {
+        "name": "Swap usage"
+      },
+      "disk": {
+        "name": "Disk usage"
+      },
+      "cpu_temperature": {
+        "name": "CPU temperature"
+      },
+      "npu_temperature": {
+        "name": "NPU temperature"
+      },
+      "last_boot": {
+        "name": "Last boot"
+      },
+      "firmware": {
+        "name": "Firmware"
+      },
+      "ips_version": {
+        "name": "IPS signatures"
+      },
+      "webcat_version": {
+        "name": "Web category database"
+      },
+      "traffic_in": {
+        "name": "Interface {name} received"
+      },
+      "traffic_out": {
+        "name": "Interface {name} sent"
       }
     },
     "binary_sensor": {
@@ -68,7 +104,25 @@
       },
       "hotfix_auto": {
         "name": "Automatic hotfixes"
+      },
+      "link": {
+        "name": "Interface {name} link"
       }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Live data (SNMP)",
+        "description": "SNMP v2c community of the firewall for live data (CPU, memory, temperature, link state, traffic). Leave empty to turn SNMP off.",
+        "data": {
+          "snmp_community": "SNMP community",
+          "snmp_port": "SNMP port"
+        }
+      }
+    },
+    "error": {
+      "snmp_failed": "No answer from the SNMP agent (check community, port and the SNMP settings on the firewall)"
     }
   }
 }

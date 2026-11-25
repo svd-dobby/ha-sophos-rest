@@ -5,15 +5,18 @@ from __future__ import annotations
 from ipaddress import IPv4Address, ip_address
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
-from homeassistant.const import EntityCategory, UnitOfTime
+from datetime import timedelta
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfInformation, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import SophosConfigEntry
 from .coordinator import SophosCoordinator, days_until
-from .entity import SophosEntity
+from .entity import SophosEntity, SophosSnmpEntity
+from .snmp_coordinator import SnmpCoordinator
 
 
 def _pools(server: dict[str, Any]) -> list[tuple[IPv4Address, IPv4Address]]:
@@ -75,6 +78,31 @@ async def async_setup_entry(
 
     _add_new()
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
+
+    snmp: SnmpCoordinator | None = coordinator.snmp
+    if snmp is None:
+        return
+    snmp_known: set[str] = set()
+
+    @callback
+    def _add_snmp() -> None:
+        if snmp.data is None:
+            return
+        ents: list[SensorEntity] = []
+        for key in SYSTEM_SENSORS:
+            if key not in snmp_known and snmp.data.system.get(SYSTEM_SENSORS[key]["field"]) is not None:
+                snmp_known.add(key)
+                ents.append(SnmpSystemSensor(snmp, key))
+        for name in snmp_interfaces(coordinator, snmp):
+            for direction in ("in", "out"):
+                if (k := f"if:{name}:{direction}") not in snmp_known:
+                    snmp_known.add(k)
+                    ents.append(SnmpTrafficSensor(snmp, name, direction))
+        if ents:
+            async_add_entities(ents)
+
+    _add_snmp()
+    entry.async_on_unload(snmp.async_add_listener(_add_snmp))
 
 
 class SophosSensor(SophosEntity, SensorEntity):
@@ -284,3 +312,95 @@ class CertificateExpirySensor(SophosSensor):
             "subject": info.get("subject"),
             "issuer": info.get("issuer"),
         }
+
+
+def snmp_interfaces(rest: SophosCoordinator, snmp: SnmpCoordinator) -> list[str]:
+    """SNMP interfaces to expose: those known to the REST API, else the Ethernet ones."""
+    if snmp.data is None:
+        return []
+    names = set((rest.data.interfaces or {}).keys())
+    if names:
+        return [n for n in snmp.data.interfaces if n in names]
+    return [n for n, i in snmp.data.interfaces.items() if i.get("type") == 6]
+
+
+SYSTEM_SENSORS: dict[str, dict[str, Any]] = {
+    "cpu": {"field": "cpu_percent", "unit": PERCENTAGE, "icon": "mdi:cpu-64-bit"},
+    "memory": {"field": "memory_percent", "unit": PERCENTAGE, "icon": "mdi:memory"},
+    "swap": {"field": "swap_percent", "unit": PERCENTAGE, "icon": "mdi:memory", "diag": True},
+    "disk": {"field": "disk_percent", "unit": PERCENTAGE, "icon": "mdi:harddisk"},
+    "cpu_temperature": {"field": "cpu_temperature", "unit": UnitOfTemperature.CELSIUS,
+                        "class": SensorDeviceClass.TEMPERATURE},
+    "npu_temperature": {"field": "npu_temperature", "unit": UnitOfTemperature.CELSIUS,
+                        "class": SensorDeviceClass.TEMPERATURE},
+    "last_boot": {"field": "uptime_seconds", "class": SensorDeviceClass.TIMESTAMP, "diag": True},
+    "firmware": {"field": "firmware", "icon": "mdi:package-variant", "diag": True, "text": True},
+    "ips_version": {"field": "ips_version", "icon": "mdi:shield-sync", "diag": True, "text": True},
+    "webcat_version": {"field": "webcat_version", "icon": "mdi:web", "diag": True, "text": True},
+}
+
+
+class SnmpSystemSensor(SophosSnmpEntity, SensorEntity):
+    """A system value from the SNMP agent."""
+
+    def __init__(self, coordinator: SnmpCoordinator, key: str) -> None:
+        super().__init__(coordinator, key)
+        spec = SYSTEM_SENSORS[key]
+        self._field = spec["field"]
+        self._attr_translation_key = key
+        self._attr_native_unit_of_measurement = spec.get("unit")
+        self._attr_device_class = spec.get("class")
+        if "icon" in spec:
+            self._attr_icon = spec["icon"]
+        if spec.get("diag"):
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        if not spec.get("text") and spec.get("class") != SensorDeviceClass.TIMESTAMP:
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._boot = None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data is not None and (
+            self.coordinator.data.system.get(self._field) is not None
+        )
+
+    @property
+    def native_value(self) -> Any:
+        value = self.coordinator.data.system.get(self._field) if self.coordinator.data else None
+        if self._field == "uptime_seconds" and value is not None:
+            # Last boot, rounded to the minute so the state does not change every poll.
+            boot = (dt_util.utcnow() - timedelta(seconds=value)).replace(second=0, microsecond=0)
+            if self._boot is None or abs((boot - self._boot).total_seconds()) > 120:
+                self._boot = boot
+            return self._boot
+        return value
+
+
+class SnmpTrafficSensor(SophosSnmpEntity, SensorEntity):
+    """Bytes received or sent on an interface (64-bit counter)."""
+
+    _attr_device_class = SensorDeviceClass.DATA_SIZE
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfInformation.BYTES
+    _attr_suggested_unit_of_measurement = UnitOfInformation.GIGABYTES
+    _attr_suggested_display_precision = 2
+
+    def __init__(self, coordinator: SnmpCoordinator, name: str, direction: str) -> None:
+        super().__init__(coordinator, f"interface_{name}_{direction}")
+        self._name = name
+        self._field = f"{direction}_octets"
+        self._attr_translation_key = f"traffic_{direction}"
+        self._attr_translation_placeholders = {"name": name}
+        self._attr_icon = "mdi:download-network" if direction == "in" else "mdi:upload-network"
+
+    @property
+    def _iface(self) -> dict[str, Any] | None:
+        return self.coordinator.data.interfaces.get(self._name) if self.coordinator.data else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._iface is not None and self._iface.get(self._field) is not None
+
+    @property
+    def native_value(self) -> int | None:
+        return (self._iface or {}).get(self._field)

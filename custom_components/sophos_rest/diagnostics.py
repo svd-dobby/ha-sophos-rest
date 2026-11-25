@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from . import SophosConfigEntry
 
-TO_REDACT = {CONF_API_KEY, "macAddress"}
+TO_REDACT = {CONF_API_KEY, "macAddress", "snmp_community", "serial"}
 
 
 async def async_get_config_entry_diagnostics(
@@ -35,5 +35,11 @@ async def async_get_config_entry_diagnostics(
             "spoof": data.spoof,
             "hotfix": data.hotfix,
             "unavailable": data.unavailable,
+            "options": dict(entry.options),
+            "snmp": (
+                {"system": snmp.data.system, "interfaces": snmp.data.interfaces}
+                if (snmp := entry.runtime_data.snmp) is not None and snmp.data
+                else None
+            ),
         }, TO_REDACT
     )

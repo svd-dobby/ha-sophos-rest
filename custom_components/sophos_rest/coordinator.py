@@ -86,6 +86,7 @@ class SophosCoordinator(DataUpdateCoordinator[SophosData]):
             update_interval=DEFAULT_SCAN_INTERVAL,
         )
         self.client = client
+        self.snmp: Any = None  # SnmpCoordinator when SNMP is configured
 
     async def _optional(self, data: SophosData, key: str, coro: Any) -> Any:
         """Run an optional request; a missing permission or path only disables that part."""

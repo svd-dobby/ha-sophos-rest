@@ -9,6 +9,11 @@ CONF_VERIFY_SSL = "verify_ssl"
 DEFAULT_PORT = 4444
 DEFAULT_VERIFY_SSL = False
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
+SNMP_SCAN_INTERVAL = timedelta(seconds=30)
+
+CONF_SNMP_COMMUNITY = "snmp_community"
+CONF_SNMP_PORT = "snmp_port"
+DEFAULT_SNMP_PORT = 161
 
 API_BASE = "/api/firewall-config/v1"
 PATH_DHCP_SERVERS_V4 = "/network/dhcp/server/servers/ipv4"

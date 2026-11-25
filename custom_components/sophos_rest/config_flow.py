@@ -7,9 +7,11 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_NAME, CONF_PORT
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
 
 from .api import (
     SophosAuthError,
@@ -18,13 +20,29 @@ from .api import (
     SophosForbiddenError,
     SophosRestClient,
 )
-from .const import CONF_VERIFY_SSL, DEFAULT_NAME, DEFAULT_PORT, DEFAULT_VERIFY_SSL, DOMAIN
+from .const import (
+    CONF_SNMP_COMMUNITY,
+    CONF_SNMP_PORT,
+    CONF_VERIFY_SSL,
+    DEFAULT_NAME,
+    DEFAULT_PORT,
+    DEFAULT_SNMP_PORT,
+    DEFAULT_VERIFY_SSL,
+    DOMAIN,
+)
+from .snmp import SnmpClient, SnmpError
+from .snmp_coordinator import SYSTEM_OIDS
 
 
 class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
     """UI config flow."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        return SophosRestOptionsFlow()
 
     async def _test(self, data: dict[str, Any]) -> str | None:
         client = SophosRestClient(
@@ -92,5 +110,46 @@ class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=vol.Schema({vol.Required(CONF_API_KEY): str}),
+            errors=errors,
+        )
+
+
+class SophosRestOptionsFlow(OptionsFlow):
+    """Options: SNMP v2c for live data (leave the community empty to disable)."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            community = (user_input.get(CONF_SNMP_COMMUNITY) or "").strip()
+            port = user_input.get(CONF_SNMP_PORT, DEFAULT_SNMP_PORT)
+            if not community:
+                return self.async_create_entry(data={})
+            client = SnmpClient(self.config_entry.data[CONF_HOST], community, port)
+            try:
+                result = await client.get([SYSTEM_OIDS["model"]])
+            except SnmpError:
+                errors["base"] = "snmp_failed"
+            else:
+                if not any(result.values()):
+                    errors["base"] = "snmp_failed"
+                else:
+                    return self.async_create_entry(
+                        data={CONF_SNMP_COMMUNITY: community, CONF_SNMP_PORT: port}
+                    )
+        schema = vol.Schema(
+            {
+                vol.Optional(CONF_SNMP_COMMUNITY): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                ),
+                vol.Required(CONF_SNMP_PORT, default=DEFAULT_SNMP_PORT): int,
+            }
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                schema, user_input or dict(self.config_entry.options)
+            ),
             errors=errors,
         )

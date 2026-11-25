@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 (25 November 2026)
+- Live data over SNMP v2c (read-only), configured in the integration options (community and port; empty community turns SNMP off). Own minimal SNMP client (`snmp.py`), no extra dependency.
+- New sensors (SNMP): CPU, memory, swap and disk usage, CPU and NPU temperature, last boot, firmware, IPS signature and web category versions, bytes received and sent per interface.
+- New binary sensors (SNMP): live link state per interface.
+- Device info gets model, firmware and serial number from SNMP.
+
 ## 0.3.0 (25 November 2026)
 - Paging for collections (`pageSize=100`, `page=N`); the default page size of the API is 50.
 - HTTP 403 no longer triggers re-authentication: a part the API profile cannot read is simply left out (listed under `unavailable` in diagnostics).

@@ -5,14 +5,16 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SophosConfigEntry
 from .coordinator import SophosCoordinator, SophosData
-from .entity import SophosEntity
+from .entity import SophosEntity, SophosSnmpEntity
+from .sensor import snmp_interfaces
+from .snmp_coordinator import SnmpCoordinator
 
 
 async def async_setup_entry(
@@ -48,6 +50,21 @@ async def async_setup_entry(
 
     _add_new()
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
+
+    snmp: SnmpCoordinator | None = coordinator.snmp
+    if snmp is None:
+        return
+    snmp_known: set[str] = set()
+
+    @callback
+    def _add_snmp() -> None:
+        new = [n for n in snmp_interfaces(coordinator, snmp) if n not in snmp_known]
+        snmp_known.update(new)
+        if new:
+            async_add_entities(LinkSensor(snmp, n) for n in new)
+
+    _add_snmp()
+    entry.async_on_unload(snmp.async_add_listener(_add_snmp))
 
 
 class SophosBinarySensor(SophosEntity, BinarySensorEntity):
@@ -158,3 +175,33 @@ class FeatureSensor(SophosBinarySensor):
     @property
     def is_on(self) -> bool | None:
         return FEATURES[self._key](self.coordinator.data)
+
+
+class LinkSensor(SophosSnmpEntity, BinarySensorEntity):
+    """Live link state of an interface (SNMP ifOperStatus)."""
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "link"
+
+    def __init__(self, coordinator: SnmpCoordinator, name: str) -> None:
+        super().__init__(coordinator, f"interface_{name}_link")
+        self._name = name
+        self._attr_translation_placeholders = {"name": name}
+
+    @property
+    def _iface(self) -> dict[str, Any] | None:
+        return self.coordinator.data.interfaces.get(self._name) if self.coordinator.data else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._iface is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        i = self._iface
+        return None if i is None else bool(i.get("link_up"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        i = self._iface or {}
+        return {"speed_mbps": i.get("speed_mbps"), "admin_up": i.get("admin_up")}
