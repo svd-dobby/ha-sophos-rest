@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 import aiohttp
 
-from .const import API_BASE, PATH_DHCP_SERVERS_V4
+from .const import API_BASE, PATH_DHCP_LEASES_V4, PATH_DHCP_SERVERS_V4
 
 TIMEOUT = aiohttp.ClientTimeout(total=60)
 
@@ -86,6 +86,20 @@ class SophosRestClient:
     async def get_dhcp_servers_v4(self) -> list[dict[str, Any]]:
         """Alle DHCPv4-servers, met reserveringen en bereiken."""
         return self._items(await self._request("GET", PATH_DHCP_SERVERS_V4))
+
+    async def get_dhcp_leases_v4(self) -> list[dict[str, Any]]:
+        """Actieve DHCPv4-leases (statisch en dynamisch), alle pagina's."""
+        items: list[dict[str, Any]] = []
+        path = PATH_DHCP_LEASES_V4
+        for _ in range(50):  # veiligheidsgrens
+            data = await self._request("GET", path)
+            items.extend(self._items(data))
+            pages = data.get("pages") if isinstance(data, dict) else None
+            nxt = (pages or {}).get("nextKey") if isinstance(pages, dict) else None
+            if not nxt:
+                break
+            path = f"{PATH_DHCP_LEASES_V4}?fromKey={quote(str(nxt), safe='')}"
+        return items
 
     async def patch_dhcp_server_v4(self, name: str, changes: dict[str, Any]) -> Any:
         """Wijzig velden van een DHCPv4-server (nog niet gebruikt in stap 1)."""

@@ -12,3 +12,6 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
 
 API_BASE = "/api/firewall-config/v1"
 PATH_DHCP_SERVERS_V4 = "/network/dhcp/server/servers/ipv4"
+PATH_DHCP_LEASES_V4 = "/network/dhcp/server/leases/ipv4"
+
+DEFAULT_NAME = "Sophos Firewall"

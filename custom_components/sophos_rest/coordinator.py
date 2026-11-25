@@ -22,6 +22,7 @@ class SophosData:
     """Momentopname van de firewall."""
 
     dhcp_servers: dict[str, dict[str, Any]] = field(default_factory=dict)
+    dhcp_leases: list[dict[str, Any]] = field(default_factory=list)
 
 
 class SophosCoordinator(DataUpdateCoordinator[SophosData]):
@@ -44,10 +45,12 @@ class SophosCoordinator(DataUpdateCoordinator[SophosData]):
     async def _async_update_data(self) -> SophosData:
         try:
             servers = await self.client.get_dhcp_servers_v4()
+            leases = await self.client.get_dhcp_leases_v4()
         except SophosAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except SophosError as err:
             raise UpdateFailed(str(err)) from err
         return SophosData(
-            dhcp_servers={s["name"]: s for s in servers if s.get("name")}
+            dhcp_servers={s["name"]: s for s in servers if s.get("name")},
+            dhcp_leases=leases,
         )

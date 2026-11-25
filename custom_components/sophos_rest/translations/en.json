@@ -8,7 +8,8 @@
           "host": "Host",
           "port": "Port",
           "api_key": "API key",
-          "verify_ssl": "Verify certificate"
+          "verify_ssl": "Verify certificate",
+          "name": "Name"
         }
       },
       "reauth_confirm": {
@@ -32,6 +33,15 @@
     "sensor": {
       "dhcp_reservations": {
         "name": "DHCP {server} reservations"
+      },
+      "dhcp_free": {
+        "name": "DHCP {server} free addresses"
+      },
+      "dhcp_leases": {
+        "name": "DHCP active leases"
+      },
+      "dhcp_dynamic_leases": {
+        "name": "DHCP dynamic leases"
       }
     }
   }

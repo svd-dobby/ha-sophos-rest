@@ -8,11 +8,11 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_PORT
+from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SophosAuthError, SophosConnectionError, SophosError, SophosRestClient
-from .const import CONF_VERIFY_SSL, DEFAULT_PORT, DEFAULT_VERIFY_SSL, DOMAIN
+from .const import CONF_VERIFY_SSL, DEFAULT_NAME, DEFAULT_PORT, DEFAULT_VERIFY_SSL, DOMAIN
 
 
 class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -48,12 +48,14 @@ class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             self._abort_if_unique_id_configured()
             if (err := await self._test(user_input)) is None:
+                data = {k: v for k, v in user_input.items() if k != CONF_NAME}
                 return self.async_create_entry(
-                    title=f"Sophos {user_input[CONF_HOST]}", data=user_input
+                    title=user_input.get(CONF_NAME) or DEFAULT_NAME, data=data
                 )
             errors["base"] = err
         schema = vol.Schema(
             {
+                vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
                 vol.Required(CONF_HOST): str,
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                 vol.Required(CONF_API_KEY): str,

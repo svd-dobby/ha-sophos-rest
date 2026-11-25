@@ -18,5 +18,9 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     data = entry.runtime_data.data
     return async_redact_data(
-        {"entry": dict(entry.data), "dhcp_servers": data.dhcp_servers}, TO_REDACT
+        {
+            "entry": dict(entry.data),
+            "dhcp_servers": data.dhcp_servers,
+            "dhcp_leases": data.dhcp_leases,
+        }, TO_REDACT
     )
