@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.1 (25 November 2026)
+- A licence that Sophos reports as valid until Dec 31 2999 is treated as perpetual: no day count, attribute `perpetual`, disabled by default for new installations.
+
 ## 0.6.0 (25 November 2026)
 - Reading completed over SNMP, in three new sub-devices:
   - Services: one binary sensor per firewall service (on = running); services that were never started are disabled by default.

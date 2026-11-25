@@ -453,6 +453,11 @@ LICENSE_NAMES = {
 }
 
 
+def _perpetual(expires: Any) -> bool:
+    """Sophos reports a licence without end date as Dec 31 2999."""
+    return expires is not None and expires.year >= 2999
+
+
 class LicenseSensor(SophosSnmpEntity, SensorEntity):
     """Days until a licence (subscription) expires; status as attribute."""
 
@@ -467,8 +472,10 @@ class LicenseSensor(SophosSnmpEntity, SensorEntity):
         self._key = key
         self._attr_translation_placeholders = {"name": LICENSE_NAMES.get(key, key)}
         lic = coordinator.data.licenses.get(key, {}) if coordinator.data else {}
-        # Subscriptions that are not active are not useful by default.
-        self._attr_entity_registry_enabled_default = lic.get("state") in ("subscribed", "evaluating")
+        # Not useful by default: inactive subscriptions and perpetual licences.
+        self._attr_entity_registry_enabled_default = (
+            lic.get("state") in ("subscribed", "evaluating") and not _perpetual(lic.get("expires"))
+        )
 
     @property
     def _lic(self) -> dict[str, Any] | None:
@@ -482,7 +489,7 @@ class LicenseSensor(SophosSnmpEntity, SensorEntity):
     def native_value(self) -> int | None:
         lic = self._lic or {}
         expires = lic.get("expires")
-        if expires is None:
+        if expires is None or _perpetual(expires):
             return None
         return (expires - dt_util.now().date()).days
 
@@ -490,7 +497,11 @@ class LicenseSensor(SophosSnmpEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         lic = self._lic or {}
         exp = lic.get("expires")
-        return {"status": lic.get("state"), "expires": exp.isoformat() if exp else None}
+        return {
+            "status": lic.get("state"),
+            "expires": exp.isoformat() if exp else None,
+            "perpetual": _perpetual(exp),
+        }
 
 
 class PoeSensor(SophosSnmpEntity, SensorEntity):
