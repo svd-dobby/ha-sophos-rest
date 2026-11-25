@@ -36,6 +36,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 25 November 2026
+- 22:05 [Claude] Stefaan opened read access on everything for profile HA-API. Probed about 130 guessed paths with read-only GET (via `sophos_dhcp.py rest_verken @file` on HA-test): 41 work, see ROADMAP.md. Findings: paging is `?pageSize=100&page=N` (default 50), so the client must page (address objects already have 52 items); gateways have no live status; `/administration/system-settings` now readable (hostname RedDwarf).
 - 21:50 [Claude] ROADMAP.md added at Stefaan's request: API functions per category (read, create, update, delete) with priority, as a basis for choosing the order. Not yet verified per resource against the firewall.
 - 21:33 [Claude] Checked on HA-test: the lists with IP and MAC addresses (`reservations`, `leases`, `devices`) are visible as attributes in HA but are not stored in the recorder (history shows only state, enabled, interface, pools). Stefaan: keep it that way (visible, not stored).
 - 21:25 [Claude] Repository translated to English at Stefaan's request (code, README, changelog, this log, which was renamed from LOGBOEK.md to LOG.md). The HA UI follows the user's language through translations (en, nl). Sync script: English output, action `key`, updates itself on `pull`. Version 0.2.1.
