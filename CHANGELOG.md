@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (25 November 2026)
+- Paging for collections (`pageSize=100`, `page=N`); the default page size of the API is 50.
+- HTTP 403 no longer triggers re-authentication: a part the API profile cannot read is simply left out (listed under `unavailable` in diagnostics).
+- Device name taken from the firewall hostname (`/administration/system-settings`).
+- New binary sensors (read-only): one per firewall rule and per NAT rule (on = enabled), one per interface (on = enabled; the API has no live link state), intrusion prevention, spoof protection, automatic hotfixes.
+- New sensors: logged-in users (list as attribute, not recorded), days until expiry per certificate (parsed from the certificate; the certificate itself is not kept).
+
 ## 0.2.1 (25 November 2026)
 - Everything in the repository is now in English (code, README, changelog, log). The Home Assistant UI follows the user's language (English and Dutch).
 - `tools/sophos_rest_sync.py`: English output, action `key` (old name `sleutel` still accepted), updates itself on `pull`.

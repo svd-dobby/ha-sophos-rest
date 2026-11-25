@@ -36,6 +36,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 25 November 2026
+- 22:20 [Claude] 0.3.0 built (first read round, approved by Stefaan): paging, 403 handling, hostname as device name, binary sensors for firewall rules, NAT rules, interfaces and protection features, sensors for live users and certificate expiry. Field check: firewall and NAT rules have `enabled`; interfaces have only `enabled` (no link state); certificates come as base64 PEM.
 - 22:05 [Claude] Stefaan opened read access on everything for profile HA-API. Probed about 130 guessed paths with read-only GET (via `sophos_dhcp.py rest_verken @file` on HA-test): 41 work, see ROADMAP.md. Findings: paging is `?pageSize=100&page=N` (default 50), so the client must page (address objects already have 52 items); gateways have no live status; `/administration/system-settings` now readable (hostname RedDwarf).
 - 21:50 [Claude] ROADMAP.md added at Stefaan's request: API functions per category (read, create, update, delete) with priority, as a basis for choosing the order. Not yet verified per resource against the firewall.
 - 21:33 [Claude] Checked on HA-test: the lists with IP and MAC addresses (`reservations`, `leases`, `devices`) are visible as attributes in HA but are not stored in the recorder (history shows only state, enabled, interface, pools). Stefaan: keep it that way (visible, not stored).

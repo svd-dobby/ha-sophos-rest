@@ -11,7 +11,7 @@ from .api import SophosRestClient
 from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL
 from .coordinator import SophosCoordinator
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 type SophosConfigEntry = ConfigEntry[SophosCoordinator]
 

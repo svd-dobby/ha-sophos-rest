@@ -11,7 +11,13 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import SophosAuthError, SophosConnectionError, SophosError, SophosRestClient
+from .api import (
+    SophosAuthError,
+    SophosConnectionError,
+    SophosError,
+    SophosForbiddenError,
+    SophosRestClient,
+)
 from .const import CONF_VERIFY_SSL, DEFAULT_NAME, DEFAULT_PORT, DEFAULT_VERIFY_SSL, DOMAIN
 
 
@@ -30,7 +36,7 @@ class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         try:
             await client.get_dhcp_servers_v4()
-        except SophosAuthError:
+        except (SophosAuthError, SophosForbiddenError):
             return "invalid_auth"
         except SophosConnectionError:
             return "cannot_connect"

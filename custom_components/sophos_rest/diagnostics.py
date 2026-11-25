@@ -22,5 +22,18 @@ async def async_get_config_entry_diagnostics(
             "entry": dict(entry.data),
             "dhcp_servers": data.dhcp_servers,
             "dhcp_leases": data.dhcp_leases,
+            "hostname": data.hostname,
+            "firewall_rules": data.firewall_rules,
+            "nat_rules": data.nat_rules,
+            "interfaces": data.interfaces,
+            "live_users": data.live_users,
+            "certificates": {
+                k: {**v, "not_after": str(v.get("not_after")), "not_before": str(v.get("not_before"))}
+                for k, v in (data.certificates or {}).items()
+            },
+            "ips": data.ips,
+            "spoof": data.spoof,
+            "hotfix": data.hotfix,
+            "unavailable": data.unavailable,
         }, TO_REDACT
     )

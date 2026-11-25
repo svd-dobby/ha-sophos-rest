@@ -11,6 +11,7 @@ import aiohttp
 from .const import API_BASE, PATH_DHCP_LEASES_V4, PATH_DHCP_SERVERS_V4
 
 TIMEOUT = aiohttp.ClientTimeout(total=60)
+PAGE_SIZE = 100
 
 
 class SophosError(Exception):
@@ -32,6 +33,10 @@ class SophosApiError(SophosError):
         super().__init__(f"HTTP {status}: {body[:300]}")
         self.status = status
         self.body = body
+
+
+class SophosForbiddenError(SophosApiError):
+    """The API profile has no permission for this resource (HTTP 403)."""
 
 
 class SophosRestClient:
@@ -67,8 +72,10 @@ class SophosRestClient:
                 timeout=TIMEOUT,
             ) as resp:
                 text = await resp.text()
-                if resp.status in (401, 403):
-                    raise SophosAuthError(f"HTTP {resp.status}")
+                if resp.status == 401:
+                    raise SophosAuthError("HTTP 401")
+                if resp.status == 403:
+                    raise SophosForbiddenError(403, text)
                 if resp.status >= 400:
                     raise SophosApiError(resp.status, text)
                 if not text.strip():
@@ -82,6 +89,23 @@ class SophosRestClient:
         if isinstance(data, dict):
             return list(data.get("items") or [])
         return list(data or [])
+
+    async def get(self, path: str) -> Any:
+        """GET a single object (settings)."""
+        return await self._request("GET", path)
+
+    async def get_all(self, path: str) -> list[dict[str, Any]]:
+        """GET a collection, following the page-based paging (pageSize max 100)."""
+        items: list[dict[str, Any]] = []
+        sep = "&" if "?" in path else "?"
+        for page in range(1, 51):  # safety limit: 5000 items
+            data = await self._request("GET", f"{path}{sep}pageSize={PAGE_SIZE}&page={page}")
+            batch = self._items(data)
+            items.extend(batch)
+            pages = data.get("pages") if isinstance(data, dict) else None
+            if not isinstance(pages, dict) or "current" not in pages or len(batch) < PAGE_SIZE:
+                break
+        return items
 
     async def get_dhcp_servers_v4(self) -> list[dict[str, Any]]:
         """All DHCPv4 servers, including reservations and pools."""

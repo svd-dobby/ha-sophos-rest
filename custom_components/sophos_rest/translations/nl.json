@@ -42,6 +42,32 @@
       },
       "dhcp_dynamic_leases": {
         "name": "DHCP dynamische leases"
+      },
+      "live_users": {
+        "name": "Aangemelde gebruikers"
+      },
+      "certificate_expiry": {
+        "name": "Certificaat {name} verloopt over"
+      }
+    },
+    "binary_sensor": {
+      "firewall_rule": {
+        "name": "Firewallregel {name}"
+      },
+      "nat_rule": {
+        "name": "NAT-regel {name}"
+      },
+      "interface": {
+        "name": "Interface {name}"
+      },
+      "ips": {
+        "name": "Inbraakpreventie"
+      },
+      "spoof_protection": {
+        "name": "Spoofingbescherming"
+      },
+      "hotfix_auto": {
+        "name": "Automatische hotfixes"
       }
     }
   }
