@@ -58,6 +58,13 @@ def _tenths(value: Any) -> float | None:
     return round(value / 10, 1)
 
 
+def _clean(value: Any) -> Any:
+    """Placeholder texts such as "Not Available" count as no value."""
+    if isinstance(value, str) and value.strip().lower() in ("", "not available", "n/a"):
+        return None
+    return value
+
+
 class SnmpCoordinator(DataUpdateCoordinator[SnmpData]):
     """Polls the SNMP agent of one firewall."""
 
@@ -86,7 +93,7 @@ class SnmpCoordinator(DataUpdateCoordinator[SnmpData]):
         except SnmpError as err:
             raise UpdateFailed(f"SNMP: {err}") from err
 
-        values = {key: raw.get(oid) for key, oid in SYSTEM_OIDS.items()}
+        values = {key: _clean(raw.get(oid)) for key, oid in SYSTEM_OIDS.items()}
         cpu = [v for v in loads.values() if isinstance(v, int)]
         system = {
             "name": values["name"],
