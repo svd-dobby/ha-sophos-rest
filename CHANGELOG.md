@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.1 (25 November 2026)
+- Sub-devices are created in setup with `via_device_id` (the `via_device` key in DeviceInfo is deprecated since HA 2026 and stops working in 2027.8).
+
 ## 0.5.0 (25 November 2026)
 - Entities are grouped into sub-devices under the main firewall device: DHCP, firewall rules, NAT rules, interfaces, security. The main device keeps the system values (CPU, memory, temperatures, firmware, logged-in users). Device names are translated (en, nl). Entity IDs do not change.
 - Shorter entity names inside a group (for example the rule name only).

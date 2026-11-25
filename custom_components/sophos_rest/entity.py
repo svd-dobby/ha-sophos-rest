@@ -19,6 +19,7 @@ GROUP_FIREWALL_RULES = "firewall_rules"
 GROUP_NAT_RULES = "nat_rules"
 GROUP_INTERFACES = "interfaces"
 GROUP_SECURITY = "security"
+GROUPS = (GROUP_DHCP, GROUP_FIREWALL_RULES, GROUP_NAT_RULES, GROUP_INTERFACES, GROUP_SECURITY)
 
 
 def base_identifier(entry: ConfigEntry) -> str:
@@ -40,21 +41,18 @@ def main_device_info(
     )
 
 
+def group_identifier(entry: ConfigEntry, group: str | None) -> str:
+    """Identifier of the main device (group None) or a sub-device."""
+    base = base_identifier(entry)
+    return base if group is None else f"{base}_{group}"
+
+
 def group_device_info(
     entry: ConfigEntry, group: str | None, hostname: str | None
 ) -> DeviceInfo:
-    """Device info for a group; a sub-device is linked to the main device."""
-    base = base_identifier(entry)
-    if group is None:
-        return DeviceInfo(identifiers={(DOMAIN, base)})
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{base}_{group}")},
-        via_device=(DOMAIN, base),
-        manufacturer="Sophos",
-        model="Sophos Firewall",
-        translation_key=group,
-        translation_placeholders={"host": hostname or entry.title},
-    )
+    """Device info for an entity. The devices themselves (names, link to the
+    main device) are created in async_setup_entry."""
+    return DeviceInfo(identifiers={(DOMAIN, group_identifier(entry, group))})
 
 
 class SophosEntity(CoordinatorEntity[SophosCoordinator]):
