@@ -40,6 +40,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 25 November 2026
+- 23:13 [Claude] ROADMAP.md: section Permissions corrected (read access on everything since 21:51, no write access yet). Spotted by Stefaan.
 - 23:08 [Claude] Stefaan chose to show the expiry date for licences (Base Firewall showed Unknown). 0.6.2.
 - 22:50 [Claude] Correction: the times of the entries from 21:55 on were written ahead of the real clock (up to 00:10); they are now set to the actual times.
 - 22:49 [Claude] 0.6.0 TESTED ON HA-TEST (pull, restart, no errors): 3 new sub-devices (services, licences, VPN), now 9 devices in total. Services: 19 running and enabled, antispam and HA service disabled by default (untouched). Licences: 7 at 86 days (Feb 19 2027), Base Firewall showed 355417 days (Dec 31 2999 = perpetual), so 0.6.1 treats that as perpetual (no day count). VPN BrigandsHof off. PoE 5 and 6: 0 W. Fan 1: 5192 rpm. ROADMAP.md updated with the reading status and an SNMP data map.

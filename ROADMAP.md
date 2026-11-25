@@ -87,4 +87,5 @@ Not found yet (404 on the guessed paths): NAT-independent ACL exception rules, u
 
 ## Permissions
 
-The API profile `HA-API` currently does not allow reading every category (for example `GET /administration/system-settings` returns 403). For every category the profile may need extra read rights; write rights are only added for the categories that get write features.
+Since 25 November 2026 the API profile `HA-API` has read access on every category (set by Stefaan); `GET /administration/system-settings` now returns 200. The paths that still return 404 are wrong guesses, not missing permissions.
+Write access is not granted yet. It will be added per category, only for the categories that get write features (first DHCP, then firewall rules).
