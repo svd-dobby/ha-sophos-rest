@@ -1,4 +1,4 @@
-"""Sophos Firewall via de REST-API (SFOS v23+)."""
+"""Sophos Firewall via the REST API (SFOS v23+)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ type SophosConfigEntry = ConfigEntry[SophosCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SophosConfigEntry) -> bool:
-    """Koppeling opzetten."""
+    """Set up a config entry."""
     verify_ssl = entry.data.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL)
     client = SophosRestClient(
         async_get_clientsession(hass, verify_ssl=verify_ssl),
@@ -34,5 +34,5 @@ async def async_setup_entry(hass: HomeAssistant, entry: SophosConfigEntry) -> bo
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: SophosConfigEntry) -> bool:
-    """Koppeling ontladen."""
+    """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

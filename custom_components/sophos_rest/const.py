@@ -1,4 +1,4 @@
-"""Constanten voor de Sophos REST-integratie."""
+"""Constants for the Sophos REST integration."""
 
 from datetime import timedelta
 

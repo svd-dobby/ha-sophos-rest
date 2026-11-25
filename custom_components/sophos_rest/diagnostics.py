@@ -1,4 +1,4 @@
-"""Diagnostiek (API-sleutel en MAC-adressen worden weggelaten)."""
+"""Diagnostics (API key and MAC addresses are redacted)."""
 
 from __future__ import annotations
 

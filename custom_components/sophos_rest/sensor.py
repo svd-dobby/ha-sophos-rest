@@ -1,4 +1,4 @@
-"""Sensoren voor DHCP: reserveringen, actieve leases en vrije adressen."""
+"""DHCP sensors: reservations, active leases and free addresses."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ from .coordinator import SophosCoordinator
 
 
 def _pools(server: dict[str, Any]) -> list[tuple[IPv4Address, IPv4Address]]:
-    uit = []
+    result = []
     for p in server.get("addressPools") or []:
         try:
-            uit.append((ip_address(p["startAddressIpv4"]), ip_address(p["endAddressIpv4"])))
+            result.append((ip_address(p["startAddressIpv4"]), ip_address(p["endAddressIpv4"])))
         except (KeyError, ValueError):
             continue
-    return uit
+    return result
 
 
 def _in_pools(ip: str | None, pools: list[tuple[IPv4Address, IPv4Address]]) -> bool:
@@ -70,7 +70,7 @@ async def async_setup_entry(
 
 
 class SophosEntity(CoordinatorEntity[SophosCoordinator], SensorEntity):
-    """Gemeenschappelijk: apparaat en naamgeving."""
+    """Common base: device info and naming."""
 
     _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -103,7 +103,7 @@ class _ServerSensor(SophosEntity):
 
 
 class DhcpReservationsSensor(_ServerSensor):
-    """Aantal vaste reserveringen op één DHCPv4-server, met de lijst als attribuut."""
+    """Number of static reservations on one DHCPv4 server, with the list as attribute."""
 
     _attr_translation_key = "dhcp_reservations"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -141,7 +141,7 @@ class DhcpReservationsSensor(_ServerSensor):
 
 
 class DhcpFreeAddressesSensor(_ServerSensor):
-    """Vrije adressen in de dynamische bereiken van één server."""
+    """Free addresses in the dynamic pools of one server."""
 
     _attr_translation_key = "dhcp_free"
     _attr_icon = "mdi:ip-outline"
@@ -172,7 +172,7 @@ class DhcpFreeAddressesSensor(_ServerSensor):
 
 
 class DhcpLeasesSensor(SophosEntity):
-    """Alle actieve leases (statisch en dynamisch)."""
+    """All active leases (static and dynamic)."""
 
     _attr_translation_key = "dhcp_leases"
     _attr_icon = "mdi:lan-connect"
@@ -196,7 +196,7 @@ class DhcpLeasesSensor(SophosEntity):
 
 
 class DhcpDynamicLeasesSensor(SophosEntity):
-    """Toestellen met een dynamisch adres (kandidaten voor een vaste reservering)."""
+    """Devices with a dynamic address (candidates for a static reservation)."""
 
     _attr_translation_key = "dhcp_dynamic_leases"
     _attr_icon = "mdi:ip-network-outline"

@@ -1,4 +1,4 @@
-"""Kleine async client voor de Sophos Firewall REST-API (SFOS v23+)."""
+"""Small async client for the Sophos Firewall REST API (SFOS v23+)."""
 
 from __future__ import annotations
 
@@ -14,19 +14,19 @@ TIMEOUT = aiohttp.ClientTimeout(total=60)
 
 
 class SophosError(Exception):
-    """Algemene fout."""
+    """Generic error."""
 
 
 class SophosAuthError(SophosError):
-    """Sleutel ongeldig of onvoldoende rechten."""
+    """Invalid API key or insufficient permissions."""
 
 
 class SophosConnectionError(SophosError):
-    """Firewall niet bereikbaar."""
+    """Firewall not reachable."""
 
 
 class SophosApiError(SophosError):
-    """De firewall antwoordde met een fout."""
+    """The firewall returned an error."""
 
     def __init__(self, status: int, body: str) -> None:
         super().__init__(f"HTTP {status}: {body[:300]}")
@@ -35,7 +35,7 @@ class SophosApiError(SophosError):
 
 
 class SophosRestClient:
-    """Toegang tot /api/firewall-config/v1 met een API-sleutel (Bearer)."""
+    """Access to /api/firewall-config/v1 with an API key (Bearer)."""
 
     def __init__(
         self,
@@ -84,14 +84,14 @@ class SophosRestClient:
         return list(data or [])
 
     async def get_dhcp_servers_v4(self) -> list[dict[str, Any]]:
-        """Alle DHCPv4-servers, met reserveringen en bereiken."""
+        """All DHCPv4 servers, including reservations and pools."""
         return self._items(await self._request("GET", PATH_DHCP_SERVERS_V4))
 
     async def get_dhcp_leases_v4(self) -> list[dict[str, Any]]:
-        """Actieve DHCPv4-leases (statisch en dynamisch), alle pagina's."""
+        """Active DHCPv4 leases (static and dynamic), all pages."""
         items: list[dict[str, Any]] = []
         path = PATH_DHCP_LEASES_V4
-        for _ in range(50):  # veiligheidsgrens
+        for _ in range(50):  # safety limit
             data = await self._request("GET", path)
             items.extend(self._items(data))
             pages = data.get("pages") if isinstance(data, dict) else None
@@ -102,7 +102,7 @@ class SophosRestClient:
         return items
 
     async def patch_dhcp_server_v4(self, name: str, changes: dict[str, Any]) -> Any:
-        """Wijzig velden van een DHCPv4-server (nog niet gebruikt in stap 1)."""
+        """Change fields of a DHCPv4 server (not used yet)."""
         return await self._request(
             "PATCH", f"{PATH_DHCP_SERVERS_V4}/{quote(name, safe='')}", changes
         )

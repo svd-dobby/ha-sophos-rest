@@ -1,4 +1,4 @@
-"""Config flow: host, poort en API-sleutel."""
+"""Config flow: name, host, port and API key."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from .const import CONF_VERIFY_SSL, DEFAULT_NAME, DEFAULT_PORT, DEFAULT_VERIFY_S
 
 
 class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Koppeling via de UI."""
+    """UI config flow."""
 
     VERSION = 1
 

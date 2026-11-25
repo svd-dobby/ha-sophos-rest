@@ -1,4 +1,4 @@
-"""Coordinator: haalt periodiek de gegevens op."""
+"""Coordinator: polls the firewall periodically."""
 
 from __future__ import annotations
 
@@ -19,14 +19,14 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class SophosData:
-    """Momentopname van de firewall."""
+    """Snapshot of the firewall data."""
 
     dhcp_servers: dict[str, dict[str, Any]] = field(default_factory=dict)
     dhcp_leases: list[dict[str, Any]] = field(default_factory=list)
 
 
 class SophosCoordinator(DataUpdateCoordinator[SophosData]):
-    """Eén coordinator per firewall."""
+    """One coordinator per firewall."""
 
     config_entry: ConfigEntry
 
