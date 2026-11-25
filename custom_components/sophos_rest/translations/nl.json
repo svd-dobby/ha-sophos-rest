@@ -80,21 +80,21 @@
         "name": "Webcategorie-database"
       },
       "traffic_in": {
-        "name": "Interface {name} ontvangen"
+        "name": "{name} ontvangen"
       },
       "traffic_out": {
-        "name": "Interface {name} verzonden"
+        "name": "{name} verzonden"
       }
     },
     "binary_sensor": {
       "firewall_rule": {
-        "name": "Firewallregel {name}"
+        "name": "{name}"
       },
       "nat_rule": {
-        "name": "NAT-regel {name}"
+        "name": "{name}"
       },
       "interface": {
-        "name": "Interface {name}"
+        "name": "{name} ingeschakeld"
       },
       "ips": {
         "name": "Inbraakpreventie"
@@ -106,7 +106,7 @@
         "name": "Automatische hotfixes"
       },
       "link": {
-        "name": "Interface {name} link"
+        "name": "{name} link"
       }
     }
   },
@@ -123,6 +123,23 @@
     },
     "error": {
       "snmp_failed": "Geen antwoord van de SNMP-agent (controleer community, poort en de SNMP-instellingen op de firewall)"
+    }
+  },
+  "device": {
+    "dhcp": {
+      "name": "{host} DHCP"
+    },
+    "firewall_rules": {
+      "name": "{host} firewallregels"
+    },
+    "nat_rules": {
+      "name": "{host} NAT-regels"
+    },
+    "interfaces": {
+      "name": "{host} interfaces"
+    },
+    "security": {
+      "name": "{host} beveiliging"
     }
   }
 }

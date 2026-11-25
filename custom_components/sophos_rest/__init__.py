@@ -15,9 +15,9 @@ from .const import (
     CONF_VERIFY_SSL,
     DEFAULT_SNMP_PORT,
     DEFAULT_VERIFY_SSL,
-    DOMAIN,
 )
 from .coordinator import SophosCoordinator
+from .entity import main_device_info
 from .snmp import SnmpClient
 from .snmp_coordinator import SnmpCoordinator
 
@@ -53,15 +53,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: SophosConfigEntry) -> bo
         # SNMP is optional: a failure here must not block the REST part.
         await snmp.async_refresh()
         coordinator.snmp = snmp
-        system = snmp.data.system if snmp.data else {}
-        if system:
-            dr.async_get(hass).async_get_or_create(
-                config_entry_id=entry.entry_id,
-                identifiers={(DOMAIN, entry.unique_id or entry.entry_id)},
-                model=system.get("model"),
-                sw_version=system.get("firmware"),
-                serial_number=system.get("serial"),
-            )
+
+    # Main device first, so the sub-devices (DHCP, rules, ...) can refer to it.
+    snmp_data = coordinator.snmp.data if coordinator.snmp is not None else None
+    dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        **main_device_info(entry, coordinator.data.hostname, snmp_data.system if snmp_data else {}),
+    )
 
     entry.runtime_data = coordinator
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))

@@ -80,21 +80,21 @@
         "name": "Web category database"
       },
       "traffic_in": {
-        "name": "Interface {name} received"
+        "name": "{name} received"
       },
       "traffic_out": {
-        "name": "Interface {name} sent"
+        "name": "{name} sent"
       }
     },
     "binary_sensor": {
       "firewall_rule": {
-        "name": "Firewall rule {name}"
+        "name": "{name}"
       },
       "nat_rule": {
-        "name": "NAT rule {name}"
+        "name": "{name}"
       },
       "interface": {
-        "name": "Interface {name}"
+        "name": "{name} enabled"
       },
       "ips": {
         "name": "Intrusion prevention"
@@ -106,7 +106,7 @@
         "name": "Automatic hotfixes"
       },
       "link": {
-        "name": "Interface {name} link"
+        "name": "{name} link"
       }
     }
   },
@@ -123,6 +123,23 @@
     },
     "error": {
       "snmp_failed": "No answer from the SNMP agent (check community, port and the SNMP settings on the firewall)"
+    }
+  },
+  "device": {
+    "dhcp": {
+      "name": "{host} DHCP"
+    },
+    "firewall_rules": {
+      "name": "{host} firewall rules"
+    },
+    "nat_rules": {
+      "name": "{host} NAT rules"
+    },
+    "interfaces": {
+      "name": "{host} interfaces"
+    },
+    "security": {
+      "name": "{host} security"
     }
   }
 }

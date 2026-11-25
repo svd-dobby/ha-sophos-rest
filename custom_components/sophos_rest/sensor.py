@@ -15,7 +15,13 @@ from homeassistant.util import dt as dt_util
 
 from . import SophosConfigEntry
 from .coordinator import SophosCoordinator, days_until
-from .entity import SophosEntity, SophosSnmpEntity
+from .entity import (
+    GROUP_DHCP,
+    GROUP_INTERFACES,
+    GROUP_SECURITY,
+    SophosEntity,
+    SophosSnmpEntity,
+)
 from .snmp_coordinator import SnmpCoordinator
 
 
@@ -92,12 +98,12 @@ async def async_setup_entry(
         for key in SYSTEM_SENSORS:
             if key not in snmp_known and snmp.data.system.get(SYSTEM_SENSORS[key]["field"]) is not None:
                 snmp_known.add(key)
-                ents.append(SnmpSystemSensor(snmp, key))
+                ents.append(SnmpSystemSensor(snmp, key, coordinator.data.hostname))
         for name in snmp_interfaces(coordinator, snmp):
             for direction in ("in", "out"):
                 if (k := f"if:{name}:{direction}") not in snmp_known:
                     snmp_known.add(k)
-                    ents.append(SnmpTrafficSensor(snmp, name, direction))
+                    ents.append(SnmpTrafficSensor(snmp, name, direction, coordinator.data.hostname))
         if ents:
             async_add_entities(ents)
 
@@ -112,6 +118,8 @@ class SophosSensor(SophosEntity, SensorEntity):
 
 
 class _ServerSensor(SophosSensor):
+    _group = GROUP_DHCP
+
     def __init__(self, coordinator: SophosCoordinator, server: str, key: str) -> None:
         super().__init__(coordinator, f"dhcp_{server}_{key}")
         self._server = server
@@ -198,6 +206,7 @@ class DhcpFreeAddressesSensor(_ServerSensor):
 class DhcpLeasesSensor(SophosSensor):
     """All active leases (static and dynamic)."""
 
+    _group = GROUP_DHCP
     _attr_translation_key = "dhcp_leases"
     _attr_icon = "mdi:lan-connect"
     _unrecorded_attributes = frozenset({"leases"})
@@ -222,6 +231,7 @@ class DhcpLeasesSensor(SophosSensor):
 class DhcpDynamicLeasesSensor(SophosSensor):
     """Devices with a dynamic address (candidates for a static reservation)."""
 
+    _group = GROUP_DHCP
     _attr_translation_key = "dhcp_dynamic_leases"
     _attr_icon = "mdi:ip-network-outline"
     _unrecorded_attributes = frozenset({"devices"})
@@ -279,6 +289,7 @@ class LiveUsersSensor(SophosSensor):
 class CertificateExpirySensor(SophosSensor):
     """Days until a certificate expires."""
 
+    _group = GROUP_SECURITY
     _attr_translation_key = "certificate_expiry"
     _attr_icon = "mdi:certificate"
     _attr_native_unit_of_measurement = UnitOfTime.DAYS
@@ -343,8 +354,8 @@ SYSTEM_SENSORS: dict[str, dict[str, Any]] = {
 class SnmpSystemSensor(SophosSnmpEntity, SensorEntity):
     """A system value from the SNMP agent."""
 
-    def __init__(self, coordinator: SnmpCoordinator, key: str) -> None:
-        super().__init__(coordinator, key)
+    def __init__(self, coordinator: SnmpCoordinator, key: str, hostname: str | None) -> None:
+        super().__init__(coordinator, key, hostname)
         spec = SYSTEM_SENSORS[key]
         self._field = spec["field"]
         self._attr_translation_key = key
@@ -384,9 +395,10 @@ class SnmpTrafficSensor(SophosSnmpEntity, SensorEntity):
     _attr_native_unit_of_measurement = UnitOfInformation.BYTES
     _attr_suggested_unit_of_measurement = UnitOfInformation.GIGABYTES
     _attr_suggested_display_precision = 2
+    _group = GROUP_INTERFACES
 
-    def __init__(self, coordinator: SnmpCoordinator, name: str, direction: str) -> None:
-        super().__init__(coordinator, f"interface_{name}_{direction}")
+    def __init__(self, coordinator: SnmpCoordinator, name: str, direction: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"interface_{name}_{direction}", hostname)
         self._name = name
         self._field = f"{direction}_octets"
         self._attr_translation_key = f"traffic_{direction}"

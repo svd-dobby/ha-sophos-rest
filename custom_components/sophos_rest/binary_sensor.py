@@ -12,7 +12,14 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import SophosConfigEntry
 from .coordinator import SophosCoordinator, SophosData
-from .entity import SophosEntity, SophosSnmpEntity
+from .entity import (
+    GROUP_FIREWALL_RULES,
+    GROUP_INTERFACES,
+    GROUP_NAT_RULES,
+    GROUP_SECURITY,
+    SophosEntity,
+    SophosSnmpEntity,
+)
 from .sensor import snmp_interfaces
 from .snmp_coordinator import SnmpCoordinator
 
@@ -61,7 +68,7 @@ async def async_setup_entry(
         new = [n for n in snmp_interfaces(coordinator, snmp) if n not in snmp_known]
         snmp_known.update(new)
         if new:
-            async_add_entities(LinkSensor(snmp, n) for n in new)
+            async_add_entities(LinkSensor(snmp, n, coordinator.data.hostname) for n in new)
 
     _add_snmp()
     entry.async_on_unload(snmp.async_add_listener(_add_snmp))
@@ -77,6 +84,7 @@ class RuleSensor(SophosBinarySensor):
     _attr_icon = "mdi:wall-fire"
 
     def __init__(self, coordinator: SophosCoordinator, rule_id: str, kind: str) -> None:
+        self._group = GROUP_FIREWALL_RULES if kind == "firewall" else GROUP_NAT_RULES
         super().__init__(coordinator, f"{kind}_rule_{rule_id}")
         self._id = rule_id
         self._kind = kind
@@ -117,6 +125,7 @@ class InterfaceSensor(SophosBinarySensor):
 
     _attr_translation_key = "interface"
     _attr_icon = "mdi:ethernet"
+    _group = GROUP_INTERFACES
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: SophosCoordinator, name: str) -> None:
@@ -162,6 +171,7 @@ class FeatureSensor(SophosBinarySensor):
 
     _attr_icon = "mdi:shield-check"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _group = GROUP_SECURITY
 
     def __init__(self, coordinator: SophosCoordinator, key: str) -> None:
         super().__init__(coordinator, f"feature_{key}")
@@ -182,9 +192,10 @@ class LinkSensor(SophosSnmpEntity, BinarySensorEntity):
 
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
     _attr_translation_key = "link"
+    _group = GROUP_INTERFACES
 
-    def __init__(self, coordinator: SnmpCoordinator, name: str) -> None:
-        super().__init__(coordinator, f"interface_{name}_link")
+    def __init__(self, coordinator: SnmpCoordinator, name: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"interface_{name}_link", hostname)
         self._name = name
         self._attr_translation_placeholders = {"name": name}
 

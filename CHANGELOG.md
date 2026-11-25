@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0 (25 November 2026)
+- Entities are grouped into sub-devices under the main firewall device: DHCP, firewall rules, NAT rules, interfaces, security. The main device keeps the system values (CPU, memory, temperatures, firmware, logged-in users). Device names are translated (en, nl). Entity IDs do not change.
+- Shorter entity names inside a group (for example the rule name only).
+
 ## 0.4.1 (25 November 2026)
 - SNMP: placeholder texts such as "Not Available" (web category version on this firewall) are treated as no value.
 
