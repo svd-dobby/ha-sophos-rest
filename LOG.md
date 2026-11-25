@@ -40,6 +40,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 25 November 2026
+- 23:08 [Claude] Stefaan chose to show the expiry date for licences (Base Firewall showed Unknown). 0.6.2.
 - 22:50 [Claude] Correction: the times of the entries from 21:55 on were written ahead of the real clock (up to 00:10); they are now set to the actual times.
 - 22:49 [Claude] 0.6.0 TESTED ON HA-TEST (pull, restart, no errors): 3 new sub-devices (services, licences, VPN), now 9 devices in total. Services: 19 running and enabled, antispam and HA service disabled by default (untouched). Licences: 7 at 86 days (Feb 19 2027), Base Firewall showed 355417 days (Dec 31 2999 = perpetual), so 0.6.1 treats that as perpetual (no day count). VPN BrigandsHof off. PoE 5 and 6: 0 W. Fan 1: 5192 rpm. ROADMAP.md updated with the reading status and an SNMP data map.
 - 22:46 [Claude] Option 1 chosen by Stefaan: complete reading. Verified via `snmp_verken`: services .3.1-.3.21 (3 = running, antispam and HA service 0), licences .5.x (8 subscribed until Feb 19 2027, base firewall Dec 31 2999, Enhanced Plus not subscribed), VPN table .6.1.1.1 (BrigandsHof inactive), PoE .9.5 (two ports, 0 W), fan .9.3 (5252 rpm), HA cluster disabled (not used). Built 0.6.0 with sub-devices services, licences, VPN.

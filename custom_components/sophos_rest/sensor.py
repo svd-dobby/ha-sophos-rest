@@ -5,7 +5,7 @@ from __future__ import annotations
 from ipaddress import IPv4Address, ip_address
 from typing import Any
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.const import (
@@ -459,23 +459,20 @@ def _perpetual(expires: Any) -> bool:
 
 
 class LicenseSensor(SophosSnmpEntity, SensorEntity):
-    """Days until a licence (subscription) expires; status as attribute."""
+    """Expiry date of a licence (subscription); status and days left as attributes."""
 
     _group = GROUP_LICENSES
     _attr_translation_key = "license"
     _attr_icon = "mdi:license"
-    _attr_native_unit_of_measurement = UnitOfTime.DAYS
-    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_device_class = SensorDeviceClass.DATE
 
     def __init__(self, coordinator: SnmpCoordinator, key: str, hostname: str | None) -> None:
         super().__init__(coordinator, f"license_{key}", hostname)
         self._key = key
         self._attr_translation_placeholders = {"name": LICENSE_NAMES.get(key, key)}
         lic = coordinator.data.licenses.get(key, {}) if coordinator.data else {}
-        # Not useful by default: inactive subscriptions and perpetual licences.
-        self._attr_entity_registry_enabled_default = (
-            lic.get("state") in ("subscribed", "evaluating") and not _perpetual(lic.get("expires"))
-        )
+        # Inactive subscriptions are not useful by default.
+        self._attr_entity_registry_enabled_default = lic.get("state") in ("subscribed", "evaluating")
 
     @property
     def _lic(self) -> dict[str, Any] | None:
@@ -486,21 +483,18 @@ class LicenseSensor(SophosSnmpEntity, SensorEntity):
         return super().available and self._lic is not None
 
     @property
-    def native_value(self) -> int | None:
-        lic = self._lic or {}
-        expires = lic.get("expires")
-        if expires is None or _perpetual(expires):
-            return None
-        return (expires - dt_util.now().date()).days
+    def native_value(self) -> date | None:
+        return (self._lic or {}).get("expires")
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         lic = self._lic or {}
         exp = lic.get("expires")
+        perpetual = _perpetual(exp)
         return {
             "status": lic.get("state"),
-            "expires": exp.isoformat() if exp else None,
-            "perpetual": _perpetual(exp),
+            "days_remaining": None if exp is None or perpetual else (exp - dt_util.now().date()).days,
+            "perpetual": perpetual,
         }
 
 

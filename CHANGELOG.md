@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.2 (25 November 2026)
+- Licence sensors show the expiry date (device class date) instead of days; status, days remaining and `perpetual` are attributes. A perpetual licence shows 31 December 2999.
+
 ## 0.6.1 (25 November 2026)
 - A licence that Sophos reports as valid until Dec 31 2999 is treated as perpetual: no day count, attribute `perpetual`, disabled by default for new installations.
 
