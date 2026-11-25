@@ -24,6 +24,9 @@ Log for the development of the `sophos_rest` integration, separate from the Home
 
 ## Plan
 
+See ROADMAP.md for the breakdown per API category and priority.
+
+
 1. Skeleton: config flow (host, port, key, certificate), coordinator, sensor per DHCP server, diagnostics. Read-only. Done (0.1.0).
 2. Read DHCP completely: reservations, active leases, dynamic leases, free addresses. Done (0.2.0).
 3. Write DHCP: actions `add_reservation` and `remove_reservation` with dry run, pool and duplicate checks, read-back.
@@ -33,6 +36,7 @@ Log for the development of the `sophos_rest` integration, separate from the Home
 ## History
 
 ### 25 November 2026
+- 21:50 [Claude] ROADMAP.md added at Stefaan's request: API functions per category (read, create, update, delete) with priority, as a basis for choosing the order. Not yet verified per resource against the firewall.
 - 21:33 [Claude] Checked on HA-test: the lists with IP and MAC addresses (`reservations`, `leases`, `devices`) are visible as attributes in HA but are not stored in the recorder (history shows only state, enabled, interface, pools). Stefaan: keep it that way (visible, not stored).
 - 21:25 [Claude] Repository translated to English at Stefaan's request (code, README, changelog, this log, which was renamed from LOGBOEK.md to LOG.md). The HA UI follows the user's language through translations (en, nl). Sync script: English output, action `key`, updates itself on `pull`. Version 0.2.1.
 - 21:20 [Claude] STEP 2 TESTED ON HA-TEST. Stefaan added the deploy key, `sophos_rest_sync test` OK, `pull` 0.1.0 to 0.2.0 (commit 10b28cf, backup in /config/git_repo/sophos_rest_bak), HA-test restarted, no errors. Values: active leases 59 (39 static, 20 dynamic), dynamic leases 20, free addresses Default_DHCP_Server 44 (pools total 64 addresses), GuestAccess_DHCP 155, reservations 60 and 0. Existing entity IDs unchanged. Next: step 3 (write DHCP, first on GuestAccess_DHCP).
