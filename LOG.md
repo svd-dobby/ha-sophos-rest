@@ -33,9 +33,14 @@ See ROADMAP.md for the breakdown per API category and priority.
 4. Other API groups step by step (interfaces, gateways, firewall rules, hosts, system).
 5. Update entity for the private repo, then installation on prod and phasing out `sophos_firewall`.
 
+## Open items
+
+- When `sophos_firewall` is removed (after Stefaan's approval): rename the six DHCP entity IDs `sensor.sophos_192_168_1_254_dhcp_*` to `sensor.reddwarf_dhcp_*` (the `reddwarf_dhcp_leases_*` IDs are taken by the old integration until then). Check references first.
+
 ## History
 
 ### 25 November 2026
+- 23:50 [Stefaan] Renaming the old `sophos_192_168_1_254` entity IDs waits until `sophos_firewall` can go. Added under Open items.
 - 23:45 [Claude] Stefaan: drop "DHCP" from the entity names in the DHCP sub-device. 0.5.2 (translations only).
 - 23:40 [Claude] 0.5.0 gave a deprecation warning (`via_device` in DeviceInfo, stops working in HA 2027.8). 0.5.1 creates the sub-devices in setup with `via_device_id`. TESTED ON HA-TEST: main device RedDwarf (model XGS138_XN01_SFOS) with 5 sub-devices: RedDwarf DHCP, firewall rules (14 entities), NAT rules, interfaces, security. No warnings, entity IDs unchanged.
 - 23:30 [Claude] Stefaan asked to split the long entity list into groups, like growatt_modbus. 0.5.0: sub-devices via `via_device` (DHCP, firewall rules, NAT rules, interfaces, security); the main device is created first in `async_setup_entry`.
