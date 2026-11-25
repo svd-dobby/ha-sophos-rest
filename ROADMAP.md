@@ -1,6 +1,6 @@
 # Roadmap: API functions per category and priority
 
-Draft of 25 November 2026, for deciding the order of work. Reading always comes first.
+Draft of 25 November 2026, updated after version 0.6.0. Reading always comes first.
 
 Operations: **R** = read (GET), **C** = create (POST), **U** = update (PUT/PATCH), **D** = delete (DELETE).
 The operations listed are what the resource type normally offers (collection: R C U D, settings object: R U). They have not all been verified yet: the documentation pages are partly unreachable, and `GET /network/interfaces/network-interfaces` is documented as read-only. Each category is checked against the firewall (read-only GET) before it is built.
@@ -10,17 +10,17 @@ Priority for Home Assistant: **1** = high value, build first; **2** = useful; **
 | # | Category | API resources | Ops | Prio read | Prio write | In Home Assistant |
 |---|---|---|---|---|---|---|
 | 1 | DHCP | DHCPv4/v6 servers, leases, relays | R C U D | 1 (done) | 1: reservations (C, D) | sensors (done); actions add/remove reservation |
-| 2 | Gateways / WAN | routing gateways | R U | 1 | 4 | binary_sensor per gateway (up/down), internet-down alerts |
-| 3 | Interfaces | network interfaces, zones | R | 1 | 4 | sensors: status, IP, link per interface |
-| 4 | Firewall rules | firewall rules, NAT rules, ACL exceptions | R C U D | 1 | 1: enable/disable (U) | switch per rule (e.g. block a device), attributes |
+| 2 | Gateways / WAN | routing gateways | R U | 1 (no live state in REST; WAN link via SNMP, done) | 4 | link of the WAN port (interfaces sub-device) |
+| 3 | Interfaces | network interfaces (REST), IF-MIB (SNMP), PoE | R | 1 (done) | 4 | sub-device interfaces: enabled, link, received/sent, PoE power |
+| 4 | Firewall rules | firewall rules, NAT rules, ACL exceptions | R C U D | 1 (done) | 1: enable/disable (U) | sub-devices firewall rules and NAT rules; later a switch per rule |
 | 5 | Address objects | IPv4/IPv6/MAC/FQDN hosts and groups, country groups | R C U D | 2 | 2: add/remove a host to/from a group | actions; together with firewall rules |
 | 6 | DNS | DNS host entries, request routes, DNS settings | R C U D | 2 | 2: host entries (C, D) | actions: local DNS name for a device |
-| 7 | System updates | security updates, hotfix, pattern updates, backup settings | R U | 2 | 4 | update/binary_sensor: firmware or pattern update available, last backup |
-| 8 | Certificates | certificates, CAs, CSRs, CRLs | R C D | 2 | 4 | sensor: days until expiry |
-| 9 | VPN status | IPsec site-to-site (live), SSL VPN, remote access | R C U D | 3 | 3: connect/disconnect tunnel | binary_sensor per tunnel |
-| 10 | Live users | authentication live users, user login/logout | R + action | 3 | 3 | sensor: logged-in users |
+| 7 | System | firmware, uptime, CPU, memory, disk, temperatures, fans (SNMP); hotfix, pattern updates, backup (REST) | R U | 2 (done except backup and update availability) | 4 | main device |
+| 8 | Certificates | certificates, CAs, CSRs, CRLs | R C D | 2 (done) | 4 | sub-device security: days until expiry |
+| 9 | VPN status | IPsec connections (SNMP), SSL VPN settings (REST) | R C U D | 3 (done for IPsec) | 3: connect/disconnect tunnel | sub-device VPN: one binary sensor per connection |
+| 10 | Live users | authentication live users, user login/logout | R + action | 3 (done) | 3 | main device: logged-in users |
 | 11 | Web and application filter | web filter policies, exceptions, URL groups, application filter | R C U D | 3 | 3: toggle exception or URL group entry | switch or action |
-| 12 | Protection status | IPS, malware, zero-day, DoS, active threat response | R U | 3 | 4 | binary_sensor: protection on/off |
+| 12 | Protection status | IPS, spoof protection, hotfixes (REST); service states and licences (SNMP) | R U | 3 (done) | 4 | sub-devices security, services, licences |
 | 13 | Traffic shaping | policies, settings | R C U D | 3 | 3 | select or switch per policy |
 | 14 | Wireless hotspots | hotspots, vouchers, settings | R C D | 3 | 3: create a guest voucher | button or action |
 | 15 | Logging and monitoring | syslog servers, log settings, SNMP, NetFlow, notification list | R U | 3 | 4 | diagnostics only |
@@ -28,6 +28,24 @@ Priority for Home Assistant: **1** = high value, build first; **2** = useful; **
 | 17 | Administration | access profiles, API access, portal, schedules, messages, system settings | R U | 3 | 4 (never) | read-only diagnostics at most |
 | 18 | Authentication | users, groups, servers, TOTP, STAS, SSO, password settings | R C U D | 4 | 4 (never) | not planned |
 | 19 | Other | SSL/TLS inspection, WAF, spoof protection, support access, cellular WAN, mDNS | R C U D | 4 | 4 | not planned |
+
+## SNMP (read-only, live data)
+
+Own SNMP v2c client, community in the integration options. Verified on the firewall (SOPHOS-XG-MIB base `1.3.6.1.4.1.2604.5.1`):
+
+| Data | OID | Used in |
+|---|---|---|
+| Name, model, firmware, serial, web category and IPS versions | `.1.1.0` to `.1.6.0` | device info, main device |
+| Uptime (TimeTicks), disk, memory, swap | `.2.2.0`, `.2.4.2.0`, `.2.5.2.0`, `.2.5.4.0` | main device |
+| Service states (21 services) | `.3.1.0` to `.3.21.0` | sub-device services |
+| HA cluster status | `.4.x` | not used (cluster disabled) |
+| Licences (status, expiry) | `.5.1.x` to `.5.9.x` | sub-device licences |
+| IPsec connections | `.6.1.1.1` | sub-device VPN |
+| NPU and CPU temperature, fans, PoE | `.9.1.0`, `.9.2.0`, `.9.3`, `.9.5` | main device, sub-device interfaces |
+| CPU load per core | HOST-RESOURCES-MIB `1.3.6.1.2.1.25.3.3.1.2` | main device |
+| Interfaces (name, type, admin and link state, 64-bit counters, speed) | IF-MIB `1.3.6.1.2.1.2.2` and `1.3.6.1.2.1.31.1.1` | sub-device interfaces |
+
+Not used yet: HTTP/FTP/mail hit counters (`.2.7.0` to `.2.9.x`), wireless access points (`.7.1`).
 
 ## Verified read endpoints (25 November 2026, profile HA-API with read access on everything)
 
