@@ -36,6 +36,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 25 November 2026
+- 23:45 [Claude] Stefaan: drop "DHCP" from the entity names in the DHCP sub-device. 0.5.2 (translations only).
 - 23:40 [Claude] 0.5.0 gave a deprecation warning (`via_device` in DeviceInfo, stops working in HA 2027.8). 0.5.1 creates the sub-devices in setup with `via_device_id`. TESTED ON HA-TEST: main device RedDwarf (model XGS138_XN01_SFOS) with 5 sub-devices: RedDwarf DHCP, firewall rules (14 entities), NAT rules, interfaces, security. No warnings, entity IDs unchanged.
 - 23:30 [Claude] Stefaan asked to split the long entity list into groups, like growatt_modbus. 0.5.0: sub-devices via `via_device` (DHCP, firewall rules, NAT rules, interfaces, security); the main device is created first in `async_setup_entry`.
 - 23:15 [Claude] 0.4.1 SNMP TESTED ON HA-TEST: Stefaan entered the community in the options. New entities, values equal to the old `sophos_firewall` (XML API plus SNMP): CPU 5.8 %, memory 53 %, disk 31 %, swap 0 %, CPU 32.0 and NPU 34.2 degrees, last boot 18:59 UTC, firmware 23.0.0 GA-Build371, IPS signatures 18.25.96; link per interface (Port1-6 and br0 up, PortF1 and PortF2 down); received and sent per interface (GB). No errors. Still only in the old integration: VPN tunnel state, PoE, licences, services, HTTP hits, web filter default action, and its switches (XML API writes).

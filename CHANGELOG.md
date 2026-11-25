@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.2 (25 November 2026)
+- DHCP entity names without the word "DHCP"; the sub-device already says it.
+
 ## 0.5.1 (25 November 2026)
 - Sub-devices are created in setup with `via_device_id` (the `via_device` key in DeviceInfo is deprecated since HA 2026 and stops working in 2027.8).
 

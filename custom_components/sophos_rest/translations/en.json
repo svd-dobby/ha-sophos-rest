@@ -32,16 +32,16 @@
   "entity": {
     "sensor": {
       "dhcp_reservations": {
-        "name": "DHCP {server} reservations"
+        "name": "{server} reservations"
       },
       "dhcp_free": {
-        "name": "DHCP {server} free addresses"
+        "name": "{server} free addresses"
       },
       "dhcp_leases": {
-        "name": "DHCP active leases"
+        "name": "Active leases"
       },
       "dhcp_dynamic_leases": {
-        "name": "DHCP dynamic leases"
+        "name": "Dynamic leases"
       },
       "live_users": {
         "name": "Logged-in users"
