@@ -30,6 +30,7 @@ Eigen logboek voor de ontwikkeling van de integratie `sophos_rest`, los van het 
 ## Verloop
 
 ### 25 november 2026
+- 21:08 [Claude] STAP 1 GETEST OP HA-TEST: Stefaan koppelde de integratie in de UI. sensor.sophos_192_168_1_254_dhcp_default_dhcp_server_reservations = 60 (enabled true, br0, 4 bereiken), sensor.sophos_192_168_1_254_dhcp_guestaccess_dhcp_reservations = 0. Geen fouten in de log. Opmerking: de entiteitsnamen komen uit de titel (host), later eventueel de firewallnaam (RedDwarf) gebruiken.
 - 21:10 [Claude] 0.1.0 op HA-test gezet: bestanden via de File editor naar /config/custom_components/sophos_rest (groottes nagekeken, gelijk aan de repo), HA-test herstart. Geen fouten in de log. De koppeling toevoegen doet Stefaan zelf in de UI (de API-sleutel voert Claude niet in). Tijdelijke werkwijze: later een sync-script of de update-entiteit (stap 5).
 - 21:00 [Claude] Eerste push naar GitHub (Claude-app kreeg toegang tot de repo).
 - 20:40 [Claude] Repo-geraamte gemaakt, versie 0.1.0 (stap 1). Nog niet op HA-test geinstalleerd. Wacht op de lege repo op GitHub.
