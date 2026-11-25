@@ -1,0 +1,13 @@
+{
+  "domain": "sophos_rest",
+  "name": "Sophos Firewall (REST)",
+  "codeowners": ["@svd-dobby"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/svd-dobby/ha-sophos-rest",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/svd-dobby/ha-sophos-rest/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sophos Firewall (REST)",
+        "description": "Create an API key on the firewall: Administration > API access.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "api_key": "API key",
+          "verify_ssl": "Verify certificate"
+        }
+      },
+      "reauth_confirm": {
+        "title": "New API key",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the firewall",
+      "invalid_auth": "Invalid API key or insufficient permissions",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This firewall is already configured",
+      "reauth_successful": "New key saved"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "dhcp_reservations": {
+        "name": "DHCP {server} reservations"
+      }
+    }
+  }
+}

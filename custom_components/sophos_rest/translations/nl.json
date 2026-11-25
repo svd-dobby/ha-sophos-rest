@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sophos Firewall (REST)",
+        "description": "API-sleutel aanmaken op de firewall: Administration > API access.",
+        "data": {
+          "host": "Host",
+          "port": "Poort",
+          "api_key": "API-sleutel",
+          "verify_ssl": "Certificaat controleren"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Nieuwe API-sleutel",
+        "data": {
+          "api_key": "API-sleutel"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Firewall niet bereikbaar",
+      "invalid_auth": "API-sleutel ongeldig of onvoldoende rechten",
+      "unknown": "Onverwachte fout"
+    },
+    "abort": {
+      "already_configured": "Deze firewall is al gekoppeld",
+      "reauth_successful": "Nieuwe sleutel opgeslagen"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "dhcp_reservations": {
+        "name": "DHCP {server} reserveringen"
+      }
+    }
+  }
+}
