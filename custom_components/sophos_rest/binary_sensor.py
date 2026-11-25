@@ -17,6 +17,8 @@ from .entity import (
     GROUP_INTERFACES,
     GROUP_NAT_RULES,
     GROUP_SECURITY,
+    GROUP_SERVICES,
+    GROUP_VPN,
     SophosEntity,
     SophosSnmpEntity,
 )
@@ -65,10 +67,24 @@ async def async_setup_entry(
 
     @callback
     def _add_snmp() -> None:
-        new = [n for n in snmp_interfaces(coordinator, snmp) if n not in snmp_known]
-        snmp_known.update(new)
-        if new:
-            async_add_entities(LinkSensor(snmp, n, coordinator.data.hostname) for n in new)
+        if snmp.data is None:
+            return
+        host = coordinator.data.hostname
+        ents: list[BinarySensorEntity] = []
+        for n in snmp_interfaces(coordinator, snmp):
+            if (k := f"link:{n}") not in snmp_known:
+                snmp_known.add(k)
+                ents.append(LinkSensor(snmp, n, host))
+        for key in snmp.data.services:
+            if (k := f"svc:{key}") not in snmp_known:
+                snmp_known.add(k)
+                ents.append(ServiceSensor(snmp, key, host))
+        for name in snmp.data.vpn:
+            if (k := f"vpn:{name}") not in snmp_known:
+                snmp_known.add(k)
+                ents.append(VpnSensor(snmp, name, host))
+        if ents:
+            async_add_entities(ents)
 
     _add_snmp()
     entry.async_on_unload(snmp.async_add_listener(_add_snmp))
@@ -216,3 +232,78 @@ class LinkSensor(SophosSnmpEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         i = self._iface or {}
         return {"speed_mbps": i.get("speed_mbps"), "admin_up": i.get("admin_up")}
+
+
+SERVICE_NAMES = {
+    "pop3": "POP3", "imap": "IMAP", "smtp": "SMTP", "ftp": "FTP", "http_proxy": "HTTP proxy",
+    "antivirus": "Antivirus", "antispam": "Anti-spam", "dns": "DNS", "ha_service": "HA service",
+    "ips": "IPS", "apache": "Apache", "ntp": "NTP", "tomcat": "Tomcat", "ssl_vpn": "SSL VPN",
+    "ipsec_vpn": "IPsec VPN", "database": "Database", "network": "Network", "garner": "Garner",
+    "dynamic_routing": "Dynamic routing", "ssh": "SSH", "dgd": "DGD",
+}
+
+
+class ServiceSensor(SophosSnmpEntity, BinarySensorEntity):
+    """A firewall service: on when running."""
+
+    _group = GROUP_SERVICES
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+    _attr_translation_key = "service"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: SnmpCoordinator, key: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"service_{key}", hostname)
+        self._key = key
+        self._attr_translation_placeholders = {"name": SERVICE_NAMES.get(key, key)}
+        svc = coordinator.data.services.get(key, {}) if coordinator.data else {}
+        # Services that were never started (untouched) are not useful by default.
+        self._attr_entity_registry_enabled_default = svc.get("state") != "untouched"
+
+    @property
+    def _svc(self) -> dict[str, Any] | None:
+        return self.coordinator.data.services.get(self._key) if self.coordinator.data else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._svc is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        svc = self._svc
+        return None if svc is None else svc.get("state") == "running"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"state": (self._svc or {}).get("state")}
+
+
+class VpnSensor(SophosSnmpEntity, BinarySensorEntity):
+    """An IPsec connection: on when (partially) active."""
+
+    _group = GROUP_VPN
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "vpn"
+    _attr_icon = "mdi:vpn"
+
+    def __init__(self, coordinator: SnmpCoordinator, name: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"vpn_{name}", hostname)
+        self._name = name
+        self._attr_translation_placeholders = {"name": name}
+
+    @property
+    def _vpn(self) -> dict[str, Any] | None:
+        return self.coordinator.data.vpn.get(self._name) if self.coordinator.data else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._vpn is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        v = self._vpn
+        return None if v is None else v.get("status") in ("active", "partially_active")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        v = self._vpn or {}
+        return {k: v.get(k) for k in ("status", "activated", "tunnels", "policy", "type", "interface")}

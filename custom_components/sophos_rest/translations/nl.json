@@ -84,6 +84,15 @@
       },
       "traffic_out": {
         "name": "{name} verzonden"
+      },
+      "license": {
+        "name": "{name}"
+      },
+      "poe_power": {
+        "name": "PoE {name} vermogen"
+      },
+      "fan": {
+        "name": "Ventilator {index}"
       }
     },
     "binary_sensor": {
@@ -107,6 +116,12 @@
       },
       "link": {
         "name": "{name} link"
+      },
+      "service": {
+        "name": "{name}"
+      },
+      "vpn": {
+        "name": "{name}"
       }
     }
   },
@@ -140,6 +155,15 @@
     },
     "security": {
       "name": "{host} beveiliging"
+    },
+    "services": {
+      "name": "{host} diensten"
+    },
+    "licenses": {
+      "name": "{host} licenties"
+    },
+    "vpn": {
+      "name": "{host} VPN"
     }
   }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 (25 November 2026)
+- Reading completed over SNMP, in three new sub-devices:
+  - Services: one binary sensor per firewall service (on = running); services that were never started are disabled by default.
+  - Licences: days until expiry per subscription, status as attribute; inactive subscriptions are disabled by default.
+  - VPN: one connectivity binary sensor per IPsec connection (status, activation, policy and interface as attributes).
+- PoE power per port (interfaces sub-device) and fan speed (main device).
+
 ## 0.5.2 (25 November 2026)
 - DHCP entity names without the word "DHCP"; the sub-device already says it.
 

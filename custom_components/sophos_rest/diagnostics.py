@@ -37,7 +37,18 @@ async def async_get_config_entry_diagnostics(
             "unavailable": data.unavailable,
             "options": dict(entry.options),
             "snmp": (
-                {"system": snmp.data.system, "interfaces": snmp.data.interfaces}
+                {
+                    "system": snmp.data.system,
+                    "interfaces": snmp.data.interfaces,
+                    "services": snmp.data.services,
+                    "licenses": {
+                        k: {**v, "expires": str(v.get("expires"))}
+                        for k, v in snmp.data.licenses.items()
+                    },
+                    "vpn": snmp.data.vpn,
+                    "poe": snmp.data.poe,
+                    "fans": snmp.data.fans,
+                }
                 if (snmp := entry.runtime_data.snmp) is not None and snmp.data
                 else None
             ),

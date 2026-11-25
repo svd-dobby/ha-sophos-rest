@@ -40,6 +40,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 25 November 2026
+- 23:58 [Claude] Option 1 chosen by Stefaan: complete reading. Verified via `snmp_verken`: services .3.1-.3.21 (3 = running, antispam and HA service 0), licences .5.x (8 subscribed until Feb 19 2027, base firewall Dec 31 2999, Enhanced Plus not subscribed), VPN table .6.1.1.1 (BrigandsHof inactive), PoE .9.5 (two ports, 0 W), fan .9.3 (5252 rpm), HA cluster disabled (not used). Built 0.6.0 with sub-devices services, licences, VPN.
 - 23:50 [Stefaan] Renaming the old `sophos_192_168_1_254` entity IDs waits until `sophos_firewall` can go. Added under Open items.
 - 23:45 [Claude] Stefaan: drop "DHCP" from the entity names in the DHCP sub-device. 0.5.2 (translations only).
 - 23:40 [Claude] 0.5.0 gave a deprecation warning (`via_device` in DeviceInfo, stops working in HA 2027.8). 0.5.1 creates the sub-devices in setup with `via_device_id`. TESTED ON HA-TEST: main device RedDwarf (model XGS138_XN01_SFOS) with 5 sub-devices: RedDwarf DHCP, firewall rules (14 entities), NAT rules, interfaces, security. No warnings, entity IDs unchanged.

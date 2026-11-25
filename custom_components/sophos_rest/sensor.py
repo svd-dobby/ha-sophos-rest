@@ -8,7 +8,15 @@ from typing import Any
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfInformation, UnitOfTemperature, UnitOfTime
+from homeassistant.const import (
+    PERCENTAGE,
+    REVOLUTIONS_PER_MINUTE,
+    EntityCategory,
+    UnitOfInformation,
+    UnitOfPower,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
@@ -18,6 +26,7 @@ from .coordinator import SophosCoordinator, days_until
 from .entity import (
     GROUP_DHCP,
     GROUP_INTERFACES,
+    GROUP_LICENSES,
     GROUP_SECURITY,
     SophosEntity,
     SophosSnmpEntity,
@@ -99,6 +108,19 @@ async def async_setup_entry(
             if key not in snmp_known and snmp.data.system.get(SYSTEM_SENSORS[key]["field"]) is not None:
                 snmp_known.add(key)
                 ents.append(SnmpSystemSensor(snmp, key, coordinator.data.hostname))
+        host = coordinator.data.hostname
+        for key in snmp.data.licenses:
+            if (k := f"lic:{key}") not in snmp_known:
+                snmp_known.add(k)
+                ents.append(LicenseSensor(snmp, key, host))
+        for label in snmp.data.poe:
+            if (k := f"poe:{label}") not in snmp_known:
+                snmp_known.add(k)
+                ents.append(PoeSensor(snmp, label, host))
+        for idx in snmp.data.fans:
+            if (k := f"fan:{idx}") not in snmp_known:
+                snmp_known.add(k)
+                ents.append(FanSensor(snmp, idx, host))
         for name in snmp_interfaces(coordinator, snmp):
             for direction in ("in", "out"):
                 if (k := f"if:{name}:{direction}") not in snmp_known:
@@ -416,3 +438,113 @@ class SnmpTrafficSensor(SophosSnmpEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         return (self._iface or {}).get(self._field)
+
+
+LICENSE_NAMES = {
+    "base_firewall": "Base Firewall",
+    "network_protection": "Network Protection",
+    "web_protection": "Web Protection",
+    "email_protection": "Email Protection",
+    "web_server_protection": "Web Server Protection",
+    "zero_day_protection": "Zero-Day Protection",
+    "enhanced_support": "Enhanced Support",
+    "enhanced_plus_support": "Enhanced Plus Support",
+    "central_orchestration": "Central Orchestration",
+}
+
+
+class LicenseSensor(SophosSnmpEntity, SensorEntity):
+    """Days until a licence (subscription) expires; status as attribute."""
+
+    _group = GROUP_LICENSES
+    _attr_translation_key = "license"
+    _attr_icon = "mdi:license"
+    _attr_native_unit_of_measurement = UnitOfTime.DAYS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: SnmpCoordinator, key: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"license_{key}", hostname)
+        self._key = key
+        self._attr_translation_placeholders = {"name": LICENSE_NAMES.get(key, key)}
+        lic = coordinator.data.licenses.get(key, {}) if coordinator.data else {}
+        # Subscriptions that are not active are not useful by default.
+        self._attr_entity_registry_enabled_default = lic.get("state") in ("subscribed", "evaluating")
+
+    @property
+    def _lic(self) -> dict[str, Any] | None:
+        return self.coordinator.data.licenses.get(self._key) if self.coordinator.data else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._lic is not None
+
+    @property
+    def native_value(self) -> int | None:
+        lic = self._lic or {}
+        expires = lic.get("expires")
+        if expires is None:
+            return None
+        return (expires - dt_util.now().date()).days
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        lic = self._lic or {}
+        exp = lic.get("expires")
+        return {"status": lic.get("state"), "expires": exp.isoformat() if exp else None}
+
+
+class PoeSensor(SophosSnmpEntity, SensorEntity):
+    """Power drawn by a PoE port."""
+
+    _group = GROUP_INTERFACES
+    _attr_translation_key = "poe_power"
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: SnmpCoordinator, label: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"poe_{label}", hostname)
+        self._label = label
+        self._attr_translation_placeholders = {"name": label}
+
+    @property
+    def _poe(self) -> dict[str, Any] | None:
+        return self.coordinator.data.poe.get(self._label) if self.coordinator.data else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._poe is not None
+
+    @property
+    def native_value(self) -> float | None:
+        return (self._poe or {}).get("power_w")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        p = self._poe or {}
+        return {"enabled": p.get("enabled"), "limit_w": p.get("limit_w")}
+
+
+class FanSensor(SophosSnmpEntity, SensorEntity):
+    """Fan speed."""
+
+    _attr_translation_key = "fan"
+    _attr_icon = "mdi:fan"
+    _attr_native_unit_of_measurement = REVOLUTIONS_PER_MINUTE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: SnmpCoordinator, index: str, hostname: str | None) -> None:
+        super().__init__(coordinator, f"fan_{index}", hostname)
+        self._index = index
+        self._attr_translation_placeholders = {"index": index}
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data is not None and (
+            self._index in self.coordinator.data.fans
+        )
+
+    @property
+    def native_value(self) -> int | None:
+        return self.coordinator.data.fans.get(self._index) if self.coordinator.data else None

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date, datetime
 import logging
 from typing import Any
 
@@ -11,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SNMP_SCAN_INTERVAL
-from .snmp import SnmpClient, SnmpError
+from .snmp import SnmpClient, SnmpError, table
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +33,32 @@ SYSTEM_OIDS: dict[str, str] = {
     "cpu_temperature": f"{_SFOS}.9.2.0",
 }
 HR_PROCESSOR_LOAD = "1.3.6.1.2.1.25.3.3.1.2"
+
+# Service states (sfosXGServiceStatus, .3.x): ServiceStatsType.
+SERVICES: dict[str, str] = {
+    "pop3": f"{_SFOS}.3.1.0", "imap": f"{_SFOS}.3.2.0", "smtp": f"{_SFOS}.3.3.0",
+    "ftp": f"{_SFOS}.3.4.0", "http_proxy": f"{_SFOS}.3.5.0", "antivirus": f"{_SFOS}.3.6.0",
+    "antispam": f"{_SFOS}.3.7.0", "dns": f"{_SFOS}.3.8.0", "ha_service": f"{_SFOS}.3.9.0",
+    "ips": f"{_SFOS}.3.10.0", "apache": f"{_SFOS}.3.11.0", "ntp": f"{_SFOS}.3.12.0",
+    "tomcat": f"{_SFOS}.3.13.0", "ssl_vpn": f"{_SFOS}.3.14.0", "ipsec_vpn": f"{_SFOS}.3.15.0",
+    "database": f"{_SFOS}.3.16.0", "network": f"{_SFOS}.3.17.0", "garner": f"{_SFOS}.3.18.0",
+    "dynamic_routing": f"{_SFOS}.3.19.0", "ssh": f"{_SFOS}.3.20.0", "dgd": f"{_SFOS}.3.21.0",
+}
+SERVICE_STATES = ("untouched", "stopped", "initializing", "running", "exiting", "dead", "frozen", "unregistered")
+SERVICE_RUNNING = 3
+
+# Licences (sfosXGLicenseDetails, .5.x): status and expiry date per subscription.
+LICENSES: dict[str, int] = {
+    "base_firewall": 1, "network_protection": 2, "web_protection": 3, "email_protection": 4,
+    "web_server_protection": 5, "zero_day_protection": 6, "enhanced_support": 7,
+    "enhanced_plus_support": 8, "central_orchestration": 9,
+}
+LICENSE_STATES = ("none", "evaluating", "not_subscribed", "subscribed", "expired", "deactivated")
+
+VPN_TABLE = f"{_SFOS}.6.1.1.1.1"  # sfosIPSecVpnTunnelTable entries
+VPN_STATES = ("inactive", "active", "partially_active")
+FAN_TABLE = f"{_SFOS}.9.3.1"
+POE_TABLE = f"{_SFOS}.9.5.1"
 IF_COLUMNS: dict[str, str] = {
     "descr": "1.3.6.1.2.1.2.2.1.2",
     "type": "1.3.6.1.2.1.2.2.1.3",
@@ -50,6 +77,27 @@ class SnmpData:
 
     system: dict[str, Any] = field(default_factory=dict)
     interfaces: dict[str, dict[str, Any]] = field(default_factory=dict)
+    services: dict[str, dict[str, Any]] = field(default_factory=dict)
+    licenses: dict[str, dict[str, Any]] = field(default_factory=dict)
+    vpn: dict[str, dict[str, Any]] = field(default_factory=dict)
+    poe: dict[str, dict[str, Any]] = field(default_factory=dict)
+    fans: dict[str, int] = field(default_factory=dict)
+
+
+def _state(states: tuple[str, ...], code: Any) -> str | None:
+    if isinstance(code, int) and 0 <= code < len(states):
+        return states[code]
+    return None
+
+
+def _expiry(value: Any) -> date | None:
+    """Licence expiry such as "Feb 19 2027"; other texts ("fail") give None."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.strptime(value.strip(), "%b %d %Y").date()
+    except ValueError:
+        return None
 
 
 def _tenths(value: Any) -> float | None:
@@ -87,7 +135,13 @@ class SnmpCoordinator(DataUpdateCoordinator[SnmpData]):
 
     async def _async_update_data(self) -> SnmpData:
         try:
-            raw = await self.client.get(list(SYSTEM_OIDS.values()))
+            lic_oids = [f"{_SFOS}.5.{i}.{c}.0" for i in LICENSES.values() for c in (1, 2)]
+            raw = await self.client.get(
+                list(SYSTEM_OIDS.values()) + list(SERVICES.values()) + lic_oids
+            )
+            vpn_rows = table(await self.client.walk(VPN_TABLE), VPN_TABLE)
+            poe_rows = table(await self.client.walk(POE_TABLE), POE_TABLE)
+            fan_rows = table(await self.client.walk(FAN_TABLE), FAN_TABLE)
             loads = await self._column(HR_PROCESSOR_LOAD)
             columns = {key: await self._column(oid) for key, oid in IF_COLUMNS.items()}
         except SnmpError as err:
@@ -126,4 +180,43 @@ class SnmpCoordinator(DataUpdateCoordinator[SnmpData]):
                 "out_octets": columns["out_octets"].get(index),
                 "speed_mbps": columns["speed_mbps"].get(index),
             }
-        return SnmpData(system=system, interfaces=interfaces)
+        services = {
+            key: {"code": raw.get(oid), "state": _state(SERVICE_STATES, raw.get(oid))}
+            for key, oid in SERVICES.items()
+            if raw.get(oid) is not None
+        }
+        licenses: dict[str, dict[str, Any]] = {}
+        for key, i in LICENSES.items():
+            code = raw.get(f"{_SFOS}.5.{i}.1.0")
+            if code is None:
+                continue
+            licenses[key] = {
+                "code": code,
+                "state": _state(LICENSE_STATES, code),
+                "expires": _expiry(raw.get(f"{_SFOS}.5.{i}.2.0")),
+            }
+        vpn = {
+            str(row[2]): {
+                "status": _state(VPN_STATES, row.get(9)),
+                "activated": row.get(10) == 1,
+                "tunnels": row.get(8),
+                "policy": row.get(4),
+                "type": row.get(5),
+                "interface": row.get(7),
+            }
+            for row in vpn_rows.values()
+            if row.get(2)
+        }
+        poe = {
+            str(row.get(2) or idx): {
+                "enabled": row.get(3) == 1,
+                "limit_w": row[4] / 1000 if isinstance(row.get(4), int) else None,
+                "power_w": round(row[5] / 1000, 1) if isinstance(row.get(5), int) else None,
+            }
+            for idx, row in poe_rows.items()
+        }
+        fans = {idx: row[2] for idx, row in fan_rows.items() if isinstance(row.get(2), int)}
+        return SnmpData(
+            system=system, interfaces=interfaces, services=services,
+            licenses=licenses, vpn=vpn, poe=poe, fans=fans,
+        )
