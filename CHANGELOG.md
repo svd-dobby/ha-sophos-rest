@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0 (26 November 2026)
+- New sensor "IPsec live connections" (VPN device): number of live site-to-site connections, with bytes and packets sent and received per connection as attribute (not recorded).
+- New sensor "DoS traffic dropped" (security device): traffic dropped by DoS protection, summed over SYN, UDP, TCP, ICMP and IP floods; per type as attributes.
+- New sensor "Security updates" (security device): number of security hotfixes applied, with CVE, severity, applied time and advisory as attributes.
+- Each part is optional like the others (left out when the API profile cannot read it).
+
 ## 0.11.0 (26 November 2026)
 - New SNMP sensors: web requests (HTTP proxy hits) and SMTP requests, counters since boot (total increasing).
 - The sensors for disk, memory and swap use get the capacity in MB as attribute `capacity_mb`.

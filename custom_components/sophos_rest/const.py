@@ -38,5 +38,8 @@ PATH_CERTIFICATES = "/certificate/certificates"
 PATH_IPS_SETTINGS = "/intrusion-prevention/settings"
 PATH_SPOOF_SETTINGS = "/spoof-protection/settings"
 PATH_HOTFIX_SETTINGS = "/system/hotfix/settings"
+PATH_IPSEC_LIVE = "/ipsec-vpn/site-to-site/live-connections/ipv4"
+PATH_DOS_SUMMARY = "/denial-of-service/attacks/summary"
+PATH_SECURITY_UPDATES = "/system/security-updates"
 
 DEFAULT_NAME = "Sophos Firewall"

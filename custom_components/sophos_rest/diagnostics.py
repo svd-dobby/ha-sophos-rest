@@ -34,6 +34,9 @@ async def async_get_config_entry_diagnostics(
             "ips": data.ips,
             "spoof": data.spoof,
             "hotfix": data.hotfix,
+            "ipsec_live": data.ipsec_live,
+            "dos": data.dos,
+            "security_updates": data.security_updates,
             "unavailable": data.unavailable,
             "options": dict(entry.options),
             "snmp_traps": (

@@ -102,6 +102,15 @@
       },
       "smtp_hits": {
         "name": "SMTP-verzoeken"
+      },
+      "ipsec_live": {
+        "name": "Actieve IPsec-verbindingen"
+      },
+      "dos_dropped": {
+        "name": "DoS-verkeer tegengehouden"
+      },
+      "security_updates": {
+        "name": "Beveiligingsupdates"
       }
     },
     "binary_sensor": {

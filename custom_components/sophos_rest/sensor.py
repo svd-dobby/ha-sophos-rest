@@ -30,6 +30,7 @@ from .entity import (
     GROUP_INTERFACES,
     GROUP_LICENSES,
     GROUP_SECURITY,
+    GROUP_VPN,
     SophosEntity,
     SophosSnmpEntity,
 )
@@ -81,6 +82,15 @@ async def async_setup_entry(
             known.add("leases")
             ents.append(DhcpLeasesSensor(coordinator))
             ents.append(DhcpDynamicLeasesSensor(coordinator))
+        if data.ipsec_live is not None and "ipsec_live" not in known:
+            known.add("ipsec_live")
+            ents.append(IpsecLiveSensor(coordinator))
+        if data.dos is not None and "dos" not in known:
+            known.add("dos")
+            ents.append(DosDroppedSensor(coordinator))
+        if data.security_updates is not None and "security_updates" not in known:
+            known.add("security_updates")
+            ents.append(SecurityUpdatesSensor(coordinator))
         if data.live_users is not None and "live_users" not in known:
             known.add("live_users")
             ents.append(LiveUsersSensor(coordinator))
@@ -327,6 +337,131 @@ class LiveUsersSensor(SophosSensor):
                 }
                 for u in self.coordinator.data.live_users or []
             ]
+        }
+
+
+def _sa_totals(conn: dict[str, Any]) -> dict[str, int]:
+    """Sum packets and bytes over all IPsec SAs of a live connection."""
+    totals = {"bytes_sent": 0, "bytes_received": 0, "packets_sent": 0, "packets_received": 0}
+    ikes = [conn.get("ikeSecurityAssociation") or {}, *(conn.get("additionalIkeSecurityAssociations") or [])]
+    for ike in ikes:
+        for sa in ike.get("ipsecSecurityAssociations") or []:
+            totals["bytes_sent"] += int(sa.get("bytesSent") or 0)
+            totals["bytes_received"] += int(sa.get("bytesReceived") or 0)
+            totals["packets_sent"] += int(sa.get("packetsSent") or 0)
+            totals["packets_received"] += int(sa.get("packetsReceived") or 0)
+    return totals
+
+
+class IpsecLiveSensor(SophosSensor):
+    """Number of live site-to-site IPsec connections, with traffic per connection."""
+
+    _group = GROUP_VPN
+    _attr_translation_key = "ipsec_live"
+    _attr_icon = "mdi:vpn"
+    _unrecorded_attributes = frozenset({"connections"})
+
+    def __init__(self, coordinator: SophosCoordinator) -> None:
+        super().__init__(coordinator, "ipsec_live")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.ipsec_live is not None
+
+    @property
+    def native_value(self) -> int | None:
+        live = self.coordinator.data.ipsec_live
+        return None if live is None else len(live)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        out = []
+        for conn in self.coordinator.data.ipsec_live or []:
+            ike = conn.get("ikeSecurityAssociation") or {}
+            out.append({
+                "name": conn.get("connectionName"),
+                "type": conn.get("type"),
+                "ike_version": ike.get("ikeVersion"),
+                **_sa_totals(conn),
+            })
+        return {"connections": out}
+
+
+class DosDroppedSensor(SophosSensor):
+    """Traffic dropped by DoS protection, summed over all flood types."""
+
+    _group = GROUP_SECURITY
+    _attr_translation_key = "dos_dropped"
+    _attr_icon = "mdi:shield-alert-outline"
+
+    def __init__(self, coordinator: SophosCoordinator) -> None:
+        super().__init__(coordinator, "dos_dropped")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.dos is not None
+
+    def _per_type(self) -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
+        for kind, value in (self.coordinator.data.dos or {}).items():
+            if not isinstance(value, dict):
+                continue
+            src = value.get("source") or {}
+            dst = value.get("destination") or {}
+            out[kind] = {
+                "source_dropped": int(src.get("trafficDropped") or 0),
+                "destination_dropped": int(dst.get("trafficDropped") or 0),
+                "source_applied": src.get("applied"),
+                "destination_applied": dst.get("applied"),
+            }
+        return out
+
+    @property
+    def native_value(self) -> int | None:
+        if self.coordinator.data.dos is None:
+            return None
+        return sum(v["source_dropped"] + v["destination_dropped"] for v in self._per_type().values())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return self._per_type()
+
+
+class SecurityUpdatesSensor(SophosSensor):
+    """Security hotfixes applied on the firewall (CVE, severity, applied time)."""
+
+    _group = GROUP_SECURITY
+    _attr_translation_key = "security_updates"
+    _attr_icon = "mdi:shield-check"
+
+    def __init__(self, coordinator: SophosCoordinator) -> None:
+        super().__init__(coordinator, "security_updates")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.security_updates is not None
+
+    @property
+    def native_value(self) -> int | None:
+        upd = self.coordinator.data.security_updates
+        return None if upd is None else len(upd)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        items = self.coordinator.data.security_updates or []
+        latest = max((u.get("hotfixApplied") or "" for u in items), default="") or None
+        return {
+            "latest_applied": latest,
+            "updates": [
+                {
+                    "cve": u.get("cveId"),
+                    "severity": u.get("severity"),
+                    "applied": u.get("hotfixApplied"),
+                    "description": u.get("description"),
+                    "advisory": u.get("advisory"),
+                }
+                for u in items
+            ],
         }
 
 

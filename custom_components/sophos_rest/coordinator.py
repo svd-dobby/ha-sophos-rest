@@ -22,10 +22,13 @@ from .const import (
     PATH_CERTIFICATES,
     PATH_FIREWALL_RULES_V4,
     PATH_HOTFIX_SETTINGS,
+    PATH_DOS_SUMMARY,
     PATH_INTERFACES,
+    PATH_IPSEC_LIVE,
     PATH_IPS_SETTINGS,
     PATH_LIVE_USERS,
     PATH_NAT_RULES_V4,
+    PATH_SECURITY_UPDATES,
     PATH_SPOOF_SETTINGS,
     PATH_SYSTEM_SETTINGS,
 )
@@ -48,6 +51,9 @@ class SophosData:
     ips: dict[str, Any] | None = None
     spoof: dict[str, Any] | None = None
     hotfix: dict[str, Any] | None = None
+    ipsec_live: list[dict[str, Any]] | None = None
+    dos: dict[str, Any] | None = None
+    security_updates: list[dict[str, Any]] | None = None
     unavailable: dict[str, str] = field(default_factory=dict)
 
 
@@ -127,6 +133,11 @@ class SophosCoordinator(DataUpdateCoordinator[SophosData]):
             data.ips = await self._optional(data, "ips", c.get(PATH_IPS_SETTINGS))
             data.spoof = await self._optional(data, "spoof", c.get(PATH_SPOOF_SETTINGS))
             data.hotfix = await self._optional(data, "hotfix", c.get(PATH_HOTFIX_SETTINGS))
+            live = await self._optional(data, "ipsec_live", c.get(PATH_IPSEC_LIVE))
+            data.ipsec_live = None if live is None else list(live.get("items") or [])
+            data.dos = await self._optional(data, "dos", c.get(PATH_DOS_SUMMARY))
+            upd = await self._optional(data, "security_updates", c.get(PATH_SECURITY_UPDATES))
+            data.security_updates = None if upd is None else list(upd.get("items") or [])
         except SophosAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except SophosError as err:
