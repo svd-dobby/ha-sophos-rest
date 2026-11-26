@@ -56,6 +56,30 @@ Stefaan supplied the official MIB (revision 2018-12-18 plus the system health pa
 - Added in 0.11.0: disk, memory and swap capacity (MB, as attribute), HTTP and SMTP hit counters (`...2.7`, `...2.9.3`).
 - Not used: FTP, POP3 and IMAP hits (always 0 here), captive portal user count (`...2.6`, same as the REST logged-in users), HA (`...4`, HA disabled), IPsec policy table (`...6.1.2`), WiFi APs and clients (`...7`, empty, no Sophos APs), power supply table (`...9.4`, empty on the XGS 138). PoE voltage and current (`...9.5`) are 0 with nothing connected.
 
+### Checked against the official OpenAPI description (26 November 2026)
+
+Stefaan supplied `firewall_config_openapi.yaml` ("Sophos Firewall Configuration API" 1.0.0, OpenAPI 3.0; not stored in this repo, it is Sophos' file, 8.9 MB). It describes **391 paths**: 269 GET, 212 POST, 138 PATCH, 94 DELETE, in 27 categories (largest: authentication 81, network 76, routing 22, web 20, certificate 18, IPsec VPN 17, WAF 17, SSL VPN 13). Findings:
+
+- The paths that returned 404 before were guesses with the wrong name. The real ones include `/acl-exception-rules/ipv4`, `/routing/static-unicast-routes/ipv4`, `/sd-wan/routes/ipv4`, `/ipsec-vpn/site-to-site/connections/...`, `/denial-of-service/policies`, `/active-threat-response/...`, `/logging/log-destinations/syslog-servers`, `/monitoring/netflow/collectors`, `/monitoring/snmp/...`, `/notification/notifications`, `/administration/support-access`, `/tls-inspection/...`.
+- DHCP: `defaultLifetime` and `maxLifetime` are minutes, 1 to 43200 (matches `set_dhcp_lease_time`). `/network/dhcp/server/settings/ipv4` exists (one lease per client, send NAK, static entry scope).
+- Interfaces have no live link state in the REST API (only `enabled`); gateways have no live up/down status. SNMP stays the source for those.
+- Firewall and NAT rules have a `/move` action (reorder), SD-WAN routes too.
+
+Live status endpoints, all checked with GET on the XGS 138 (HTTP 200):
+
+| Path | Content | Now |
+|---|---|---|
+| `/ipsec-vpn/site-to-site/live-connections/ipv4` | live IPsec SAs with packets and bytes per tunnel | 0 items |
+| `/denial-of-service/attacks/summary` | per flood type (SYN, UDP, TCP, ICMP, IP): applied and traffic dropped | all 0 |
+| `/network/dns/protection/status` | Sophos DNS Protection status | notConfigured |
+| `/system/security-updates` | hotfixes with CVE, severity, applied time, advisory | 0 items |
+| `/active-threat-response/ndr-essentials/statistics` | NDR flows and risk counts | all 0 |
+| `/notification/notifications` | master switches for e-mail and SNMP traps, and per notification (name, group, e-mail, trap) | traps on |
+| `/monitoring/snmp/agent-configuration` | SNMP agent (ports 161 and 162, location, contact) | |
+| `/network/dns/host-entries` | DNS host entries | 3, two with a fixed LAN IP (.100 and .200) |
+
+The notification list has 49 fixed names (`signInFailed`, `interfaceStatus`, `ipsecUp`, `ipsecDown`, `highCpu`, `gatewayUnreachable`, `firmwareReady`, `systemStart`, virus and ATR alerts, ...). It does not give the `Alert_Id` that the traps carry, so the mapping of an alert ID to a name has to be learned from received traps.
+
 ## Verified read endpoints (25 November 2026, profile HA-API with read access on everything)
 
 Checked with read-only GET requests from HA-test. Paging on collections: `?pageSize=100&page=N` (default page size 50, maximum 100); the response has `pages` with `current`, `size`, `maxSize`. The leases list uses a different paging object (`fromKey`, `size`, `maxSize`).
