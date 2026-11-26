@@ -34,7 +34,7 @@ triggers:
     event_type: sophos_rest_trap
 ```
 
-The event data holds `trap_oid`, `trap_name` (for standard traps such as `link_down`), `version`, `alert_id` and `alert_text` (Sophos alerts), `message` (the readable text), `varbinds`, `uptime` and `config_entry_id`. Sophos sends every alert with the same trap OID, so trigger on the text, for example with a template condition on `trigger.event.data.alert_text`. The sensor "Last SNMP trap" shows the time of the last trap, with the trap and the counters as attributes.
+The event data holds `trap_oid`, `trap_name` (for standard traps such as `link_down`), `version`, `alert_id` and `alert_text` (Sophos alerts), `message` (the readable text), `varbinds`, `uptime` and `config_entry_id`. Sophos sends every alert with the same trap OID; `alert_id` identifies the kind of alert (17507 is a failed web admin sign-in, for every user), so filter on `trigger.event.data.alert_id`, or on the text. The sensor "Last SNMP trap" shows the time of the last trap, with the trap and the counters as attributes.
 
 On the firewall: turn on SNMP traps in the notification list, choose per notification what to send, and add this Home Assistant as trap receiver in the SNMP settings.
 
