@@ -38,7 +38,7 @@ class SophosData:
     """Snapshot of the firewall data. Optional parts are None when not readable."""
 
     dhcp_servers: dict[str, dict[str, Any]] = field(default_factory=dict)
-    dhcp_leases: list[dict[str, Any]] = field(default_factory=list)
+    dhcp_leases: list[dict[str, Any]] | None = None
     hostname: str | None = None
     firewall_rules: dict[str, dict[str, Any]] | None = None
     nat_rules: dict[str, dict[str, Any]] | None = None
@@ -102,9 +102,12 @@ class SophosCoordinator(DataUpdateCoordinator[SophosData]):
         c = self.client
         data = SophosData()
         try:
-            servers = await c.get_dhcp_servers_v4()
-            data.dhcp_servers = {s["name"]: s for s in servers if s.get("name")}
-            data.dhcp_leases = await c.get_dhcp_leases_v4()
+            # Every part is optional: the API profile decides what may be read
+            # (DHCP falls under the "Network" permission). Only HTTP 401 (invalid
+            # key) stops the whole update and asks for a new key.
+            servers = await self._optional(data, "dhcp_servers", c.get_dhcp_servers_v4())
+            data.dhcp_servers = {s["name"]: s for s in servers or [] if s.get("name")}
+            data.dhcp_leases = await self._optional(data, "dhcp_leases", c.get_dhcp_leases_v4())
 
             settings = await self._optional(data, "system", c.get(PATH_SYSTEM_SETTINGS))
             data.hostname = (settings or {}).get("hostname")

@@ -21,7 +21,7 @@
     },
     "error": {
       "cannot_connect": "Cannot connect to the firewall",
-      "invalid_auth": "Invalid API key or insufficient permissions",
+      "invalid_auth": "Invalid API key",
       "unknown": "Unexpected error"
     },
     "abort": {

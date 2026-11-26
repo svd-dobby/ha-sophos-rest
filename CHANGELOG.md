@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.3 (26 November 2026)
+- DHCP is optional like every other part. DHCP falls under the "Network" permission of the API profile; without it only the DHCP (and other network) entities are left out. Setup succeeds as soon as the key is valid (HTTP 403 means a valid key without permission for that part); only HTTP 401 asks for a new key.
+- The lease sensors and the logged-in users sensor are created as soon as the part can be read, also when a permission is added later (no restart needed).
+- Free addresses are unavailable when the leases cannot be read.
+
 ## 0.6.2 (25 November 2026)
 - Licence sensors show the expiry date (device class date) instead of days; status, days remaining and `perpetual` are attributes. A perpetual licence shows 31 December 2999.
 

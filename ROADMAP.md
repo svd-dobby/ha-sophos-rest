@@ -88,4 +88,5 @@ Not found yet (404 on the guessed paths): NAT-independent ACL exception rules, u
 ## Permissions
 
 Since 25 November 2026 the API profile `HA-API` has read access on every category (set by Stefaan); `GET /administration/system-settings` now returns 200. The paths that still return 404 are wrong guesses, not missing permissions.
+The integration only needs a valid key: every part it may not read (HTTP 403) is left out, the others keep working. DHCP, interfaces, zones and network objects fall under the Network permission.
 Write access is not granted yet. It will be added per category, only for the categories that get write features (first DHCP, then firewall rules).

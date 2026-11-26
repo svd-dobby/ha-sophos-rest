@@ -39,6 +39,9 @@ See ROADMAP.md for the breakdown per API category and priority.
 
 ## History
 
+### 26 November 2026
+- 14:45 [Claude] Stefaan pointed out that DHCP is not a separate permission in the profile but falls under Network. 0.6.3: every part optional, setup accepts a valid key without permissions (403), only 401 asks for a new key; lease and live-user sensors are created dynamically.
+
 ### 25 November 2026
 - 23:13 [Claude] ROADMAP.md: section Permissions corrected (read access on everything since 21:51, no write access yet). Spotted by Stefaan.
 - 23:08 [Claude] Stefaan chose to show the expiry date for licences (Base Firewall showed Unknown). 0.6.2.

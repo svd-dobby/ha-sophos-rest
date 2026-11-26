@@ -70,15 +70,18 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     known: set[str] = set()
 
-    first: list[SensorEntity] = [DhcpLeasesSensor(coordinator), DhcpDynamicLeasesSensor(coordinator)]
-    if coordinator.data.live_users is not None:
-        first.append(LiveUsersSensor(coordinator))
-    async_add_entities(first)
-
     @callback
     def _add_new() -> None:
         data = coordinator.data
         ents: list[SensorEntity] = []
+        # Created as soon as the part can be read (also when a permission is added later).
+        if data.dhcp_leases is not None and "leases" not in known:
+            known.add("leases")
+            ents.append(DhcpLeasesSensor(coordinator))
+            ents.append(DhcpDynamicLeasesSensor(coordinator))
+        if data.live_users is not None and "live_users" not in known:
+            known.add("live_users")
+            ents.append(LiveUsersSensor(coordinator))
         for n in data.dhcp_servers:
             if (k := f"dhcp:{n}") not in known:
                 known.add(k)
@@ -203,11 +206,16 @@ class DhcpFreeAddressesSensor(_ServerSensor):
     def __init__(self, coordinator: SophosCoordinator, server: str) -> None:
         super().__init__(coordinator, server, "free")
 
+    @property
+    def available(self) -> bool:
+        # Without the leases the number of free addresses is not known.
+        return super().available and self.coordinator.data.dhcp_leases is not None
+
     def _calc(self) -> tuple[int, int]:
         pools = _pools(self._data or {})
         size = sum(int(hi) - int(lo) + 1 for lo, hi in pools)
         used = sum(
-            1 for lease in self.coordinator.data.dhcp_leases
+            1 for lease in self.coordinator.data.dhcp_leases or []
             if lease.get("leaseType") == "dynamic" and _in_pools(lease.get("leasedIp"), pools)
         )
         return size, used
@@ -237,12 +245,16 @@ class DhcpLeasesSensor(SophosSensor):
         super().__init__(coordinator, "dhcp_leases")
 
     @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.dhcp_leases is not None
+
+    @property
     def native_value(self) -> int:
-        return len(self.coordinator.data.dhcp_leases)
+        return len(self.coordinator.data.dhcp_leases or [])
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        leases = self.coordinator.data.dhcp_leases
+        leases = self.coordinator.data.dhcp_leases or []
         return {
             "static": sum(1 for x in leases if x.get("leaseType") == "static"),
             "dynamic": sum(1 for x in leases if x.get("leaseType") == "dynamic"),
@@ -262,7 +274,12 @@ class DhcpDynamicLeasesSensor(SophosSensor):
         super().__init__(coordinator, "dhcp_dynamic_leases")
 
     def _dyn(self) -> list[dict[str, Any]]:
-        return [x for x in self.coordinator.data.dhcp_leases if x.get("leaseType") == "dynamic"]
+        leases = self.coordinator.data.dhcp_leases or []
+        return [x for x in leases if x.get("leaseType") == "dynamic"]
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.dhcp_leases is not None
 
     @property
     def native_value(self) -> int:

@@ -21,7 +21,7 @@
     },
     "error": {
       "cannot_connect": "Firewall niet bereikbaar",
-      "invalid_auth": "API-sleutel ongeldig of onvoldoende rechten",
+      "invalid_auth": "Ongeldige API-sleutel",
       "unknown": "Onverwachte fout"
     },
     "abort": {

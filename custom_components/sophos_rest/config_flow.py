@@ -54,7 +54,10 @@ class SophosRestConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         try:
             await client.get_dhcp_servers_v4()
-        except (SophosAuthError, SophosForbiddenError):
+        except SophosForbiddenError:
+            # The key is valid; the profile just may not read this part.
+            return None
+        except SophosAuthError:
             return "invalid_auth"
         except SophosConnectionError:
             return "cannot_connect"
