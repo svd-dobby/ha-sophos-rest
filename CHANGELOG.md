@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1 (26 November 2026)
+- Device trackers no longer get a device of their own (empty device info). In 0.13.0 Home Assistant made one device per tracker, named after the hostname (for example `lwip0`), and warned that this stops working in 2027.11.
+- Devices of this integration that are not the firewall or one of its sub-devices can now be removed from the UI (for the devices left over from 0.13.0).
+
 ## 0.13.0 (26 November 2026)
 - New platform `device_tracker`: one tracker per device the DHCP server knows (reservations and active leases), like router integrations. Home = active DHCP lease. Name = reservation name (or the hostname the device reports); attributes IP, MAC, hostname, reservation, reserved IP, DHCP server, lease type and lease end. IP, MAC, hostname and lease end are not recorded. Enabled by default so other integrations (for example Home Security Assistant) can match names, hostnames and MAC addresses. New devices are added automatically.
 

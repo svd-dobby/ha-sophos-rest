@@ -132,3 +132,11 @@ async def _async_options_updated(hass: HomeAssistant, entry: SophosConfigEntry) 
 async def async_unload_entry(hass: HomeAssistant, entry: SophosConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: SophosConfigEntry, device: dr.DeviceEntry
+) -> bool:
+    """Allow removing devices that are not the firewall or one of its sub-devices
+    (for example devices Home Assistant made for the device trackers in 0.13.0)."""
+    return not any(domain == DOMAIN for domain, _ in device.identifiers)

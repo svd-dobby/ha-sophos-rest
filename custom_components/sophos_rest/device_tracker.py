@@ -12,6 +12,7 @@ from typing import Any
 
 from homeassistant.components.device_tracker import ScannerEntity, SourceType
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
@@ -91,6 +92,11 @@ class SophosDeviceTracker(CoordinatorEntity[SophosCoordinator], ScannerEntity):
         self._attr_name = label
         host = coordinator.data.hostname or "sophos"
         self.entity_id = f"device_tracker.{slugify(f'{host} {label}')}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        # No device per tracker: an empty DeviceInfo keeps the device list clean.
+        return DeviceInfo()
 
     @property
     def _info(self) -> dict[str, Any]:
