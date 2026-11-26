@@ -15,6 +15,9 @@ CONF_SNMP_COMMUNITY = "snmp_community"
 CONF_SNMP_PORT = "snmp_port"
 DEFAULT_SNMP_PORT = 161
 
+# DHCP servers on which the actions may write (chosen in the options; empty = none)
+CONF_DHCP_WRITE_SERVERS = "dhcp_write_servers"
+
 API_BASE = "/api/firewall-config/v1"
 PATH_DHCP_SERVERS_V4 = "/network/dhcp/server/servers/ipv4"
 PATH_DHCP_LEASES_V4 = "/network/dhcp/server/leases/ipv4"

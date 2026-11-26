@@ -1,0 +1,54 @@
+add_dhcp_reservation:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: sophos_rest
+    server:
+      required: true
+      example: GuestAccess_DHCP
+      selector:
+        text:
+    name:
+      required: true
+      example: TEST_HA
+      selector:
+        text:
+    mac:
+      required: true
+      example: "02:00:00:00:00:01"
+      selector:
+        text:
+    ip:
+      required: true
+      example: 10.255.0.50
+      selector:
+        text:
+    dry_run:
+      default: false
+      selector:
+        boolean:
+
+remove_dhcp_reservation:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: sophos_rest
+    server:
+      required: true
+      example: GuestAccess_DHCP
+      selector:
+        text:
+    mac:
+      example: "02:00:00:00:00:01"
+      selector:
+        text:
+    ip:
+      example: 10.255.0.50
+      selector:
+        text:
+    dry_run:
+      default: false
+      selector:
+        boolean:

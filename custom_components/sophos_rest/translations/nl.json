@@ -128,11 +128,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "Live gegevens (SNMP)",
-        "description": "SNMP v2c-community van de firewall voor live gegevens (CPU, geheugen, temperatuur, linkstatus, verkeer). Leeg laten om SNMP uit te zetten.",
+        "title": "Opties",
+        "description": "SNMP v2c-community voor live gegevens (CPU, geheugen, temperatuur, linkstatus, verkeer); leeg laten om SNMP uit te zetten. Daaronder: de DHCP-servers die de acties mogen wijzigen.",
         "data": {
           "snmp_community": "SNMP-community",
-          "snmp_port": "SNMP-poort"
+          "snmp_port": "SNMP-poort",
+          "dhcp_write_servers": "DHCP-servers die acties mogen wijzigen"
+        },
+        "data_description": {
+          "dhcp_write_servers": "Alleen de gekozen servers kunnen gewijzigd worden met de acties reservering toevoegen of verwijderen."
         }
       }
     },
@@ -164,6 +168,111 @@
     },
     "vpn": {
       "name": "{host} VPN"
+    }
+  },
+  "services": {
+    "add_dhcp_reservation": {
+      "name": "DHCP-reservering toevoegen",
+      "description": "Voegt een vaste DHCP-reservering toe. Alleen op servers die in de opties toegelaten zijn; het IP moet buiten de dynamische bereiken liggen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Alleen nodig als er meer dan één firewall gekoppeld is."
+        },
+        "server": {
+          "name": "DHCP-server",
+          "description": "Naam van de DHCP-server, bv. Default_DHCP_Server."
+        },
+        "name": {
+          "name": "Naam",
+          "description": "Hostnaam van de reservering (letters, cijfers, _ . -)."
+        },
+        "mac": {
+          "name": "MAC-adres",
+          "description": "Bijvoorbeeld 02:00:00:00:00:01."
+        },
+        "ip": {
+          "name": "IP-adres",
+          "description": "IPv4-adres buiten de dynamische bereiken."
+        },
+        "dry_run": {
+          "name": "Droge proef",
+          "description": "Alleen controleren en tonen wat er zou veranderen; er wordt niets geschreven."
+        }
+      }
+    },
+    "remove_dhcp_reservation": {
+      "name": "DHCP-reservering verwijderen",
+      "description": "Verwijdert precies één vaste DHCP-reservering, gezocht op MAC en/of IP.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Alleen nodig als er meer dan één firewall gekoppeld is."
+        },
+        "server": {
+          "name": "DHCP-server",
+          "description": "Naam van de DHCP-server, bv. Default_DHCP_Server."
+        },
+        "mac": {
+          "name": "MAC-adres",
+          "description": "Bijvoorbeeld 02:00:00:00:00:01."
+        },
+        "ip": {
+          "name": "IP-adres",
+          "description": "IPv4-adres buiten de dynamische bereiken."
+        },
+        "dry_run": {
+          "name": "Droge proef",
+          "description": "Alleen controleren en tonen wat er zou veranderen; er wordt niets geschreven."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_mac": {
+      "message": "Ongeldig MAC-adres: {mac}"
+    },
+    "invalid_ip": {
+      "message": "Ongeldig IPv4-adres: {ip}"
+    },
+    "invalid_name": {
+      "message": "Ongeldige naam: {name} (toegelaten: letters, cijfers, _ . -, hoogstens 50)"
+    },
+    "entry_not_found": {
+      "message": "Geen geladen koppeling Sophos Firewall (REST) gevonden"
+    },
+    "entry_ambiguous": {
+      "message": "Meer dan één firewall: kies er een met config_entry_id"
+    },
+    "server_not_found": {
+      "message": "DHCP-server {server} niet gevonden (beschikbaar: {servers})"
+    },
+    "write_not_allowed": {
+      "message": "Schrijven op DHCP-server {server} is niet toegelaten; zet hem aan in de opties van de integratie"
+    },
+    "ip_in_pool": {
+      "message": "{ip} ligt in het dynamische bereik {start}-{end}; een reservering moet buiten de bereiken liggen"
+    },
+    "mac_exists": {
+      "message": "MAC {mac} heeft al een reservering ({name}, {ip})"
+    },
+    "ip_exists": {
+      "message": "IP {ip} is al gereserveerd ({name}, {mac})"
+    },
+    "mac_or_ip_required": {
+      "message": "Geef een MAC-adres, een IP-adres of beide"
+    },
+    "reservation_not_unique": {
+      "message": "Precies één passende reservering verwacht, {count} gevonden"
+    },
+    "no_read_permission": {
+      "message": "Het API-profiel mag het onderdeel Netwerk niet lezen"
+    },
+    "no_write_permission": {
+      "message": "Het API-profiel heeft geen schrijfrecht voor het onderdeel Netwerk"
+    },
+    "firewall_refused": {
+      "message": "De firewall weigerde de wijziging (HTTP {status}): {detail}"
     }
   }
 }

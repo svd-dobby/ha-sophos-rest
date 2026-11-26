@@ -5,7 +5,8 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SophosRestClient
@@ -20,11 +21,20 @@ from .const import (
 from .coordinator import SophosCoordinator
 from .entity import GROUPS, group_identifier, main_device_info
 from .snmp import SnmpClient
+from .services import async_setup_services
 from .snmp_coordinator import SnmpCoordinator
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 type SophosConfigEntry = ConfigEntry[SophosCoordinator]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the actions once for the integration."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: SophosConfigEntry) -> bool:

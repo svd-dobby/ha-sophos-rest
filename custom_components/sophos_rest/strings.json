@@ -128,11 +128,15 @@
   "options": {
     "step": {
       "init": {
-        "title": "Live data (SNMP)",
-        "description": "SNMP v2c community of the firewall for live data (CPU, memory, temperature, link state, traffic). Leave empty to turn SNMP off.",
+        "title": "Options",
+        "description": "SNMP v2c community for live data (CPU, memory, temperature, link state, traffic); leave empty to turn SNMP off. Below: the DHCP servers that the actions may change.",
         "data": {
           "snmp_community": "SNMP community",
-          "snmp_port": "SNMP port"
+          "snmp_port": "SNMP port",
+          "dhcp_write_servers": "DHCP servers that actions may change"
+        },
+        "data_description": {
+          "dhcp_write_servers": "Only the selected servers can be changed with the add/remove reservation actions."
         }
       }
     },
@@ -164,6 +168,111 @@
     },
     "vpn": {
       "name": "{host} VPN"
+    }
+  },
+  "services": {
+    "add_dhcp_reservation": {
+      "name": "Add DHCP reservation",
+      "description": "Adds a static DHCP reservation. Only on servers allowed in the options; the IP must lie outside the dynamic pools.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Only needed when more than one firewall is configured."
+        },
+        "server": {
+          "name": "DHCP server",
+          "description": "Name of the DHCP server, e.g. Default_DHCP_Server."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Host name of the reservation (letters, digits, _ . -)."
+        },
+        "mac": {
+          "name": "MAC address",
+          "description": "For example 02:00:00:00:00:01."
+        },
+        "ip": {
+          "name": "IP address",
+          "description": "IPv4 address outside the dynamic pools."
+        },
+        "dry_run": {
+          "name": "Dry run",
+          "description": "Only check and show what would change; nothing is written."
+        }
+      }
+    },
+    "remove_dhcp_reservation": {
+      "name": "Remove DHCP reservation",
+      "description": "Removes exactly one static DHCP reservation, found by MAC and/or IP.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Only needed when more than one firewall is configured."
+        },
+        "server": {
+          "name": "DHCP server",
+          "description": "Name of the DHCP server, e.g. Default_DHCP_Server."
+        },
+        "mac": {
+          "name": "MAC address",
+          "description": "For example 02:00:00:00:00:01."
+        },
+        "ip": {
+          "name": "IP address",
+          "description": "IPv4 address outside the dynamic pools."
+        },
+        "dry_run": {
+          "name": "Dry run",
+          "description": "Only check and show what would change; nothing is written."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "invalid_mac": {
+      "message": "Invalid MAC address: {mac}"
+    },
+    "invalid_ip": {
+      "message": "Invalid IPv4 address: {ip}"
+    },
+    "invalid_name": {
+      "message": "Invalid name: {name} (allowed: letters, digits, _ . -, at most 50)"
+    },
+    "entry_not_found": {
+      "message": "No loaded Sophos Firewall (REST) entry found"
+    },
+    "entry_ambiguous": {
+      "message": "More than one firewall: choose one with config_entry_id"
+    },
+    "server_not_found": {
+      "message": "DHCP server {server} not found (available: {servers})"
+    },
+    "write_not_allowed": {
+      "message": "Writing to DHCP server {server} is not allowed; enable it in the integration options"
+    },
+    "ip_in_pool": {
+      "message": "{ip} lies in the dynamic pool {start}-{end}; a reservation must be outside the pools"
+    },
+    "mac_exists": {
+      "message": "MAC {mac} already has a reservation ({name}, {ip})"
+    },
+    "ip_exists": {
+      "message": "IP {ip} is already reserved ({name}, {mac})"
+    },
+    "mac_or_ip_required": {
+      "message": "Give a MAC address, an IP address or both"
+    },
+    "reservation_not_unique": {
+      "message": "Expected exactly one matching reservation, found {count}"
+    },
+    "no_read_permission": {
+      "message": "The API profile may not read the Network section"
+    },
+    "no_write_permission": {
+      "message": "The API profile has no write permission for the Network section"
+    },
+    "firewall_refused": {
+      "message": "The firewall refused the change (HTTP {status}): {detail}"
     }
   }
 }

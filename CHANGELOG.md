@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0 (26 November 2026)
+- First write features: actions `sophos_rest.add_dhcp_reservation` and `sophos_rest.remove_dhcp_reservation`.
+  - Only on DHCP servers selected in the integration options (none by default).
+  - Checks before writing: valid name, MAC and IPv4; IP outside the dynamic pools; no duplicate MAC or IP; removal needs exactly one match.
+  - `dry_run` only checks and reports.
+  - Writes only `clientReservations` (PATCH), reads the server back and verifies that the reservations are as expected and that nothing else changed; the result is returned as action response.
+  - Clear messages for a missing write permission (Network), a refusal by the firewall and a possible change after a timeout.
+- Options flow: SNMP and the writable DHCP servers in one form.
+
 ## 0.6.3 (26 November 2026)
 - DHCP is optional like every other part. DHCP falls under the "Network" permission of the API profile; without it only the DHCP (and other network) entities are left out. Setup succeeds as soon as the key is valid (HTTP 403 means a valid key without permission for that part); only HTTP 401 asks for a new key.
 - The lease sensors and the logged-in users sensor are created as soon as the part can be read, also when a permission is added later (no restart needed).

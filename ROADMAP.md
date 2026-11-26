@@ -9,7 +9,7 @@ Priority for Home Assistant: **1** = high value, build first; **2** = useful; **
 
 | # | Category | API resources | Ops | Prio read | Prio write | In Home Assistant |
 |---|---|---|---|---|---|---|
-| 1 | DHCP | DHCPv4/v6 servers, leases, relays | R C U D | 1 (done) | 1: reservations (C, D) | sensors (done); actions add/remove reservation |
+| 1 | DHCP | DHCPv4/v6 servers, leases, relays | R C U D | 1 (done) | 1: reservations (C, D), in 0.7.0 | sensors (done); actions add/remove reservation (0.7.0) |
 | 2 | Gateways / WAN | routing gateways | R U | 1 (no live state in REST; WAN link via SNMP, done) | 4 | link of the WAN port (interfaces sub-device) |
 | 3 | Interfaces | network interfaces (REST), IF-MIB (SNMP), PoE | R | 1 (done) | 4 | sub-device interfaces: enabled, link, received/sent, PoE power |
 | 4 | Firewall rules | firewall rules, NAT rules, ACL exceptions | R C U D | 1 (done) | 1: enable/disable (U) | sub-devices firewall rules and NAT rules; later a switch per rule |
@@ -89,4 +89,4 @@ Not found yet (404 on the guessed paths): NAT-independent ACL exception rules, u
 
 Since 25 November 2026 the API profile `HA-API` has read access on every category (set by Stefaan); `GET /administration/system-settings` now returns 200. The paths that still return 404 are wrong guesses, not missing permissions.
 The integration only needs a valid key: every part it may not read (HTTP 403) is left out, the others keep working. DHCP, interfaces, zones and network objects fall under the Network permission.
-Write access is not granted yet. It will be added per category, only for the categories that get write features (first DHCP, then firewall rules).
+Write access: Network (since 26 November 2026, for the DHCP actions). Other categories only when they get write features (next: firewall rules).
