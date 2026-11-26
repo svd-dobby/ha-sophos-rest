@@ -6,6 +6,7 @@ import asyncio
 from collections import deque
 from datetime import datetime
 import logging
+import re
 from typing import Any, Callable
 
 from .snmp import SnmpError, _dec_oid, _dec_value, _read_tlv
@@ -19,6 +20,18 @@ _TRAP_V2 = 0xA7
 SYS_UPTIME = "1.3.6.1.2.1.1.3.0"
 SNMP_TRAP_OID = "1.3.6.1.6.3.1.1.4.1.0"
 SNMP_TRAP_ENTERPRISE = "1.3.6.1.6.3.1.1.4.3.0"
+
+# Sophos sends every alert with the same trap OID; the alert itself is a text varbind.
+SOPHOS_ALERT_TEXT = "1.3.6.1.4.1.2604.5.1.8.1.2.0"
+# Varbinds left out of the event: serial number (kept private) and fixed device info.
+SOPHOS_SKIP = {
+    "1.3.6.1.4.1.2604.5.1.1.1.0",  # hostname
+    "1.3.6.1.4.1.2604.5.1.1.2.0",  # model
+    "1.3.6.1.4.1.2604.5.1.1.3.0",  # firmware
+    "1.3.6.1.4.1.2604.5.1.1.4.0",  # serial number
+    "1.3.6.1.4.1.2604.5.1.2.1.0",  # current date
+}
+_ALERT_RE = re.compile(r"Alert_Id\s*:\s*(\d+)\s*Message\s*:\s*(.*)", re.S)
 
 # Standard traps (RFC 3418); vendor traps keep their OID.
 GENERIC_V1 = ("cold_start", "warm_start", "link_down", "link_up", "authentication_failure", "egp_neighbor_loss")
@@ -153,15 +166,27 @@ class TrapReceiver:
             _LOGGER.debug("SNMP trap from %s rejected: %s", sender, err)
             return
         self.received += 1
-        # Readable texts only (no OID values).
-        texts = [
-            v for _, v in trap["varbinds"]
-            if isinstance(v, str) and v.strip() and not v.replace(".", "").isdigit()
-        ]
-        trap["message"] = " | ".join(texts)
+        varbinds = [(o, v) for o, v in trap["varbinds"] if o not in SOPHOS_SKIP]
+        alert = next((v for o, v in varbinds if o == SOPHOS_ALERT_TEXT), None)
+        trap["alert_id"] = None
+        trap["alert_text"] = None
+        if isinstance(alert, str):
+            if m := _ALERT_RE.search(alert):
+                trap["alert_id"] = int(m.group(1))
+                trap["alert_text"] = m.group(2).strip()
+            else:
+                trap["alert_text"] = alert.strip()
+            trap["message"] = trap["alert_text"]
+        else:
+            # Readable texts only (no OID values).
+            trap["message"] = " | ".join(
+                v for _, v in varbinds
+                if isinstance(v, str) and v.strip() and not v.replace(".", "").isdigit()
+            )
+        trap["varbinds"] = varbinds
         trap["source"] = sender
         trap["received_at"] = datetime.now().astimezone().isoformat()
-        trap["varbinds"] = [{"oid": o, "value": v} for o, v in trap["varbinds"]]
+        trap["varbinds"] = [{"oid": o, "value": v} for o, v in varbinds]
         self.recent.appendleft(trap)
         _LOGGER.debug("SNMP trap from %s: %s", sender, trap)
         self._on_trap(trap)

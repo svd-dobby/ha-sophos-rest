@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1 (26 November 2026)
+- SNMP traps from Sophos: the alert text is split into `alert_id` and `alert_text`; `message` now holds only the alert text. Sophos sends every alert with the same trap OID (`1.3.6.1.4.1.2604.5.1.8.1.1`), so the text is what tells alerts apart.
+- The fixed device info Sophos adds to every trap (hostname, model, firmware, serial number, date) is left out of the event and the sensor; the serial number stays private.
+
 ## 0.10.0 (26 November 2026)
 - SNMP trap receiver (v1 and v2c), off by default; turned on in the options (uses the SNMP community, UDP port 162 by default). Only traps from the firewall's address with the right community are accepted.
 - Every trap fires the event `sophos_rest_trap` (trap OID, name for standard traps, version, readable message, varbinds, uptime), usable as an automation trigger.

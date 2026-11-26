@@ -2,7 +2,7 @@
 
 Custom integration `sophos_rest` for Sophos Firewall (SFOS v23 and later). It reads the firewall configuration through the REST API and the live values through SNMP. A few carefully guarded actions can change the DHCP configuration.
 
-Current version: **0.10.0**. It is tested on a test Home Assistant against an XGS 138 with SFOS 23.0. It is meant to replace the core `sophos_firewall` integration (XML API).
+Current version: **0.10.1**. It is tested on a test Home Assistant against an XGS 138 with SFOS 23.0. It is meant to replace the core `sophos_firewall` integration (XML API).
 
 ## What it provides
 
@@ -34,7 +34,7 @@ triggers:
     event_type: sophos_rest_trap
 ```
 
-The event data holds `trap_oid`, `trap_name` (for standard traps such as `link_down`), `version`, `message` (the readable texts), `varbinds`, `uptime` and `config_entry_id`. The sensor "Last SNMP trap" shows the time of the last trap, with the trap and the counters as attributes.
+The event data holds `trap_oid`, `trap_name` (for standard traps such as `link_down`), `version`, `alert_id` and `alert_text` (Sophos alerts), `message` (the readable text), `varbinds`, `uptime` and `config_entry_id`. Sophos sends every alert with the same trap OID, so trigger on the text, for example with a template condition on `trigger.event.data.alert_text`. The sensor "Last SNMP trap" shows the time of the last trap, with the trap and the counters as attributes.
 
 On the firewall: turn on SNMP traps in the notification list, choose per notification what to send, and add this Home Assistant as trap receiver in the SNMP settings.
 

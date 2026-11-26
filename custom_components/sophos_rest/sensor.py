@@ -583,7 +583,7 @@ class LastTrapSensor(SophosEntity, SensorEntity):
     _attr_translation_key = "last_snmp_trap"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_icon = "mdi:bell-ring-outline"
-    _unrecorded_attributes = frozenset({"varbinds", "message", "recent"})
+    _unrecorded_attributes = frozenset({"varbinds", "message", "alert_text", "alert_id", "recent"})
 
     def __init__(self, coordinator: SophosCoordinator) -> None:
         super().__init__(coordinator, "last_snmp_trap")
@@ -622,6 +622,6 @@ class LastTrapSensor(SophosEntity, SensorEntity):
             "last_error": receiver.last_error,
         }
         if self._trap:
-            for key in ("trap_oid", "trap_name", "version", "message", "varbinds"):
+            for key in ("trap_oid", "trap_name", "version", "alert_id", "alert_text", "message", "varbinds"):
                 attrs[key] = self._trap.get(key)
         return attrs
