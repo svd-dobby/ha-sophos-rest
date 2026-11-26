@@ -18,10 +18,12 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from . import SophosConfigEntry
+from .const import SIGNAL_TRAP
 from .coordinator import SophosCoordinator, days_until
 from .entity import (
     GROUP_DHCP,
@@ -96,6 +98,9 @@ async def async_setup_entry(
 
     _add_new()
     entry.async_on_unload(coordinator.async_add_listener(_add_new))
+
+    if getattr(coordinator, "trap", None) is not None:
+        async_add_entities([LastTrapSensor(coordinator)])
 
     snmp: SnmpCoordinator | None = coordinator.snmp
     if snmp is None:
@@ -570,3 +575,53 @@ class FanSensor(SophosSnmpEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         return self.coordinator.data.fans.get(self._index) if self.coordinator.data else None
+
+
+class LastTrapSensor(SophosEntity, SensorEntity):
+    """Time of the last SNMP trap; the trap itself as attributes (not recorded)."""
+
+    _attr_translation_key = "last_snmp_trap"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:bell-ring-outline"
+    _unrecorded_attributes = frozenset({"varbinds", "message", "recent"})
+
+    def __init__(self, coordinator: SophosCoordinator) -> None:
+        super().__init__(coordinator, "last_snmp_trap")
+        self._trap: dict[str, Any] | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self.hass, SIGNAL_TRAP.format(self.coordinator.config_entry.entry_id), self._received
+            )
+        )
+
+    @callback
+    def _received(self, trap: dict[str, Any]) -> None:
+        self._trap = trap
+        self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self):
+        if self._trap is None:
+            return None
+        return dt_util.parse_datetime(self._trap["received_at"])
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        receiver = self.coordinator.trap
+        attrs: dict[str, Any] = {
+            "listening_port": receiver.port,
+            "received": receiver.received,
+            "rejected": receiver.rejected,
+            "last_error": receiver.last_error,
+        }
+        if self._trap:
+            for key in ("trap_oid", "trap_name", "version", "message", "varbinds"):
+                attrs[key] = self._trap.get(key)
+        return attrs

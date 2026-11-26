@@ -36,6 +36,17 @@ async def async_get_config_entry_diagnostics(
             "hotfix": data.hotfix,
             "unavailable": data.unavailable,
             "options": dict(entry.options),
+            "snmp_traps": (
+                {
+                    "port": trap.port,
+                    "received": trap.received,
+                    "rejected": trap.rejected,
+                    "last_error": trap.last_error,
+                    "recent": list(trap.recent),
+                }
+                if (trap := getattr(entry.runtime_data, "trap", None)) is not None
+                else None
+            ),
             "snmp": (
                 {
                     "system": snmp.data.system,

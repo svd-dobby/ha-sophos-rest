@@ -93,6 +93,9 @@
       },
       "fan": {
         "name": "Fan {index}"
+      },
+      "last_snmp_trap": {
+        "name": "Last SNMP trap"
       }
     },
     "binary_sensor": {
@@ -129,19 +132,23 @@
     "step": {
       "init": {
         "title": "Options",
-        "description": "SNMP v2c community for live data (CPU, memory, temperature, link state, traffic); leave empty to turn SNMP off. Below: the DHCP servers that the actions may change.",
+        "description": "SNMP v2c community for live data (CPU, memory, temperature, link state, traffic); leave empty to turn SNMP off. The trap receiver uses the same community. Below: the DHCP servers that the actions may change.",
         "data": {
           "snmp_community": "SNMP community",
           "snmp_port": "SNMP port",
-          "dhcp_write_servers": "DHCP servers that actions may change"
+          "dhcp_write_servers": "DHCP servers that actions may change",
+          "trap_enabled": "Receive SNMP traps",
+          "trap_port": "Trap port (UDP)"
         },
         "data_description": {
-          "dhcp_write_servers": "Only the selected servers can be changed with the add/remove reservation actions."
+          "dhcp_write_servers": "Only the selected servers can be changed with the add/remove reservation actions.",
+          "trap_enabled": "Every trap from the firewall becomes the event sophos_rest_trap, usable as an automation trigger. Set this Home Assistant as trap receiver on the firewall."
         }
       }
     },
     "error": {
-      "snmp_failed": "No answer from the SNMP agent (check community, port and the SNMP settings on the firewall)"
+      "snmp_failed": "No answer from the SNMP agent (check community, port and the SNMP settings on the firewall)",
+      "trap_needs_community": "The trap receiver needs the SNMP community"
     }
   },
   "device": {

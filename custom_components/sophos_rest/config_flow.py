@@ -37,10 +37,13 @@ from .const import (
     CONF_DHCP_WRITE_SERVERS,
     CONF_SNMP_COMMUNITY,
     CONF_SNMP_PORT,
+    CONF_TRAP_ENABLED,
+    CONF_TRAP_PORT,
     CONF_VERIFY_SSL,
     DEFAULT_NAME,
     DEFAULT_PORT,
     DEFAULT_SNMP_PORT,
+    DEFAULT_TRAP_PORT,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
 )
@@ -143,8 +146,12 @@ class SophosRestOptionsFlow(OptionsFlow):
             port = user_input.get(CONF_SNMP_PORT, DEFAULT_SNMP_PORT)
             options: dict[str, Any] = {
                 CONF_DHCP_WRITE_SERVERS: list(user_input.get(CONF_DHCP_WRITE_SERVERS) or []),
+                CONF_TRAP_ENABLED: bool(user_input.get(CONF_TRAP_ENABLED)),
+                CONF_TRAP_PORT: user_input.get(CONF_TRAP_PORT, DEFAULT_TRAP_PORT),
             }
-            if community:
+            if options[CONF_TRAP_ENABLED] and not community:
+                errors["base"] = "trap_needs_community"
+            if community and not errors:
                 client = SnmpClient(self.config_entry.data[CONF_HOST], community, port)
                 try:
                     result = await client.get([SYSTEM_OIDS["model"]])
@@ -168,6 +175,8 @@ class SophosRestOptionsFlow(OptionsFlow):
                     TextSelectorConfig(type=TextSelectorType.PASSWORD)
                 ),
                 vol.Required(CONF_SNMP_PORT, default=DEFAULT_SNMP_PORT): int,
+                vol.Required(CONF_TRAP_ENABLED, default=False): bool,
+                vol.Required(CONF_TRAP_PORT, default=DEFAULT_TRAP_PORT): int,
                 vol.Optional(CONF_DHCP_WRITE_SERVERS, default=[]): SelectSelector(
                     SelectSelectorConfig(
                         options=sorted(set(servers) | set(current)),

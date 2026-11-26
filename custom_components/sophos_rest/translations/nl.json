@@ -93,6 +93,9 @@
       },
       "fan": {
         "name": "Ventilator {index}"
+      },
+      "last_snmp_trap": {
+        "name": "Laatste SNMP-trap"
       }
     },
     "binary_sensor": {
@@ -129,19 +132,23 @@
     "step": {
       "init": {
         "title": "Opties",
-        "description": "SNMP v2c-community voor live gegevens (CPU, geheugen, temperatuur, linkstatus, verkeer); leeg laten om SNMP uit te zetten. Daaronder: de DHCP-servers die de acties mogen wijzigen.",
+        "description": "SNMP v2c-community voor live gegevens (CPU, geheugen, temperatuur, linkstatus, verkeer); leeg laten zet SNMP uit. De trap-ontvanger gebruikt dezelfde community. Daaronder: de DHCP-servers die de acties mogen wijzigen.",
         "data": {
           "snmp_community": "SNMP-community",
           "snmp_port": "SNMP-poort",
-          "dhcp_write_servers": "DHCP-servers die acties mogen wijzigen"
+          "dhcp_write_servers": "DHCP-servers die acties mogen wijzigen",
+          "trap_enabled": "SNMP-traps ontvangen",
+          "trap_port": "Trap-poort (UDP)"
         },
         "data_description": {
-          "dhcp_write_servers": "Alleen de gekozen servers kunnen gewijzigd worden met de acties reservering toevoegen of verwijderen."
+          "dhcp_write_servers": "Alleen de gekozen servers kunnen gewijzigd worden met de acties reservering toevoegen of verwijderen.",
+          "trap_enabled": "Elke trap van de firewall wordt de gebeurtenis sophos_rest_trap, bruikbaar als trigger in een automatisering. Stel deze Home Assistant in als trap-ontvanger op de firewall."
         }
       }
     },
     "error": {
-      "snmp_failed": "Geen antwoord van de SNMP-agent (controleer community, poort en de SNMP-instellingen op de firewall)"
+      "snmp_failed": "Geen antwoord van de SNMP-agent (controleer community, poort en de SNMP-instellingen op de firewall)",
+      "trap_needs_community": "De trap-ontvanger heeft de SNMP-community nodig"
     }
   },
   "device": {

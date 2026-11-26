@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0 (26 November 2026)
+- SNMP trap receiver (v1 and v2c), off by default; turned on in the options (uses the SNMP community, UDP port 162 by default). Only traps from the firewall's address with the right community are accepted.
+- Every trap fires the event `sophos_rest_trap` (trap OID, name for standard traps, version, readable message, varbinds, uptime), usable as an automation trigger.
+- New sensor "Last SNMP trap" (timestamp) with the last trap and counters as attributes (not recorded). Diagnostics list the last 20 traps.
+- A port that cannot be opened is logged and shown on the sensor; the rest of the integration keeps working.
+
 ## 0.9.0 (26 November 2026)
 - New action `sophos_rest.set_dhcp_lease_time`: sets the default and maximum lease time (minutes) of a DHCP server (only on servers allowed in the options). Writes only `defaultLifetime` and `maxLifetime`, reads back and verifies. `dry_run` shows the current values. Meant for a short lease time while addresses move; devices pick it up at their next renewal.
 

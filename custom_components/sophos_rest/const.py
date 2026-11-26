@@ -15,6 +15,13 @@ CONF_SNMP_COMMUNITY = "snmp_community"
 CONF_SNMP_PORT = "snmp_port"
 DEFAULT_SNMP_PORT = 161
 
+# SNMP trap receiver (uses the SNMP community; off by default)
+CONF_TRAP_ENABLED = "trap_enabled"
+CONF_TRAP_PORT = "trap_port"
+DEFAULT_TRAP_PORT = 162
+EVENT_TRAP = "sophos_rest_trap"
+SIGNAL_TRAP = "sophos_rest_trap_{}"
+
 # DHCP servers on which the actions may write (chosen in the options; empty = none)
 CONF_DHCP_WRITE_SERVERS = "dhcp_write_servers"
 
