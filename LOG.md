@@ -40,6 +40,7 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 26 November 2026
+- 18:00 [Claude] STEP 3 WRITE TEST PASSED ON HA-TEST (Stefaan enabled only GuestAccess_DHCP in the options). Checks: dry run add OK; IP 10.255.0.150 refused (in pool .100-.254); Default_DHCP_Server refused (not enabled); duplicate MAC refused. Real add TEST_HA 02:00:00:00:00:01 10.255.0.50: 0 to 1, as_expected true, rest_of_server_unchanged true; the XML API confirms (GuestAccess 1, Default 60). Dry run remove showed the right reservation; real remove: 1 to 0, as_expected true, rest unchanged. Default_DHCP_Server still 60 reservations. No errors in the log.
 - 17:57 [Claude] 0.7.0 on HA-test (pull, restart, no errors). Gate tested: `add_dhcp_reservation` with dry run on GuestAccess_DHCP is refused because no server is enabled in the options yet. Waiting for Stefaan to enable only GuestAccess_DHCP.
 - 17:55 [Claude] Stefaan gave profile HA-API write access on Network. STEP 3 built (0.7.0): DHCP reservation actions with dry run, checks and read-back; writable servers chosen in the options (empty by default).
 - 14:43 [Claude] 0.6.3 TESTED ON HA-TEST (pull, restart, no errors): all DHCP entities and the logged-in users sensor came back with the same entity IDs (61 leases, 18 dynamic, 46 and 155 free addresses, 4 users).
