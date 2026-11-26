@@ -40,7 +40,8 @@ See ROADMAP.md for the breakdown per API category and priority.
 ## History
 
 ### 26 November 2026
-- 18:05 [Claude] Stefaan gave profile HA-API write access on Network. STEP 3 built (0.7.0): DHCP reservation actions with dry run, checks and read-back; writable servers chosen in the options (empty by default).
+- 17:57 [Claude] 0.7.0 on HA-test (pull, restart, no errors). Gate tested: `add_dhcp_reservation` with dry run on GuestAccess_DHCP is refused because no server is enabled in the options yet. Waiting for Stefaan to enable only GuestAccess_DHCP.
+- 17:55 [Claude] Stefaan gave profile HA-API write access on Network. STEP 3 built (0.7.0): DHCP reservation actions with dry run, checks and read-back; writable servers chosen in the options (empty by default).
 - 14:43 [Claude] 0.6.3 TESTED ON HA-TEST (pull, restart, no errors): all DHCP entities and the logged-in users sensor came back with the same entity IDs (61 leases, 18 dynamic, 46 and 155 free addresses, 4 users).
 - 14:42 [Claude] Stefaan pointed out that DHCP is not a separate permission in the profile but falls under Network. 0.6.3: every part optional, setup accepts a valid key without permissions (403), only 401 asks for a new key; lease and live-user sensors are created dynamically.
 
