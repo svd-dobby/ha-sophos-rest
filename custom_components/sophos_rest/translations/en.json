@@ -226,6 +226,28 @@
           "description": "Only check and show what would change; nothing is written."
         }
       }
+    },
+    "set_dhcp_pools": {
+      "name": "Set DHCP pools",
+      "description": "Replaces the dynamic address pools of a DHCP server. Only on servers allowed in the options; no reservation may lie inside a pool.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Only needed when more than one firewall is configured."
+        },
+        "server": {
+          "name": "DHCP server",
+          "description": "Name of the DHCP server, e.g. Default_DHCP_Server."
+        },
+        "pools": {
+          "name": "Pools",
+          "description": "One or more ranges as start-end, e.g. 192.168.1.200-192.168.1.250."
+        },
+        "dry_run": {
+          "name": "Dry run",
+          "description": "Only check and show what would change; nothing is written."
+        }
+      }
     }
   },
   "exceptions": {
@@ -273,6 +295,15 @@
     },
     "firewall_refused": {
       "message": "The firewall refused the change (HTTP {status}): {detail}"
+    },
+    "invalid_pool": {
+      "message": "Invalid pool: {pool} (use start-end with start not after end)"
+    },
+    "pools_overlap": {
+      "message": "Pools overlap: {a} and {b}"
+    },
+    "reservation_in_pool": {
+      "message": "Reservation {name} ({ip}) lies inside the pool {start}-{end}; move it first"
     }
   }
 }

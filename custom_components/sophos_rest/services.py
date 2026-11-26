@@ -29,12 +29,15 @@ ATTR_DRY_RUN = "dry_run"
 
 SERVICE_ADD_RESERVATION = "add_dhcp_reservation"
 SERVICE_REMOVE_RESERVATION = "remove_dhcp_reservation"
+SERVICE_SET_POOLS = "set_dhcp_pools"
+ATTR_POOLS = "pools"
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 _NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,50}$")
 
 # Fields that are expected to change on a write; everything else must stay equal.
-_VOLATILE = ("clientReservations", "updatedAt", "createdAt")
+_VOLATILE_RES = ("clientReservations", "updatedAt", "createdAt")
+_VOLATILE_POOLS = ("addressPools", "updatedAt", "createdAt")
 
 _BASE_SCHEMA = {
     vol.Optional(ATTR_CONFIG_ENTRY): cv.string,
@@ -47,6 +50,12 @@ ADD_SCHEMA = vol.Schema(
         vol.Required(ATTR_NAME): cv.string,
         vol.Required(ATTR_MAC): cv.string,
         vol.Required(ATTR_IP): cv.string,
+    }
+)
+POOLS_SCHEMA = vol.Schema(
+    {
+        **_BASE_SCHEMA,
+        vol.Required(ATTR_POOLS): vol.All(cv.ensure_list, [cv.string], vol.Length(min=1, max=16)),
     }
 )
 REMOVE_SCHEMA = vol.Schema(
@@ -92,8 +101,8 @@ def _pools(server: dict[str, Any]) -> list[tuple[IPv4Address, IPv4Address]]:
     return pools
 
 
-def _core(server: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in server.items() if k not in _VOLATILE}
+def _core(server: dict[str, Any], volatile: tuple[str, ...] = _VOLATILE_RES) -> dict[str, Any]:
+    return {k: v for k, v in server.items() if k not in volatile}
 
 
 def _res_set(reservations: list[dict[str, Any]]) -> set[tuple[str, str]]:
@@ -247,9 +256,99 @@ async def _remove(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     return await _write(coordinator, server, before, new_list, "remove")
 
 
+def _parse_pools(raw: list[str]) -> list[tuple[IPv4Address, IPv4Address]]:
+    pools = []
+    for item in raw:
+        start, sep, end = item.replace(" ", "").partition("-")
+        if not sep:
+            raise _err("invalid_pool", pool=item)
+        lo, hi = _norm_ip(start), _norm_ip(end)
+        if lo > hi:
+            raise _err("invalid_pool", pool=item)
+        pools.append((lo, hi))
+    pools.sort()
+    for (a_lo, a_hi), (b_lo, b_hi) in zip(pools, pools[1:]):
+        if b_lo <= a_hi:
+            raise _err("pools_overlap", a=f"{a_lo}-{a_hi}", b=f"{b_lo}-{b_hi}")
+    return pools
+
+
+async def _set_pools(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    coordinator = _coordinator(hass, call)
+    server = call.data[ATTR_SERVER]
+    _check_allowed(coordinator, server)
+    pools = _parse_pools(call.data[ATTR_POOLS])
+
+    before = await _read_server(coordinator, server)
+    for r in before.get("clientReservations") or []:
+        try:
+            rip = ip_address(r.get("ipv4Address") or "")
+        except ValueError:
+            continue
+        for lo, hi in pools:
+            if lo <= rip <= hi:
+                raise _err(
+                    "reservation_in_pool", ip=rip, name=r.get("hostname"), start=lo, end=hi
+                )
+    new_pools = [{"startAddressIpv4": str(lo), "endAddressIpv4": str(hi)} for lo, hi in pools]
+
+    # Devices with a dynamic lease that falls outside the new pools: they keep their
+    # address until the lease is renewed and then get a new one.
+    old = _pools(before)
+    moved = []
+    for lease in coordinator.data.dhcp_leases or []:
+        if lease.get("leaseType") != "dynamic":
+            continue
+        try:
+            lip = ip_address(lease.get("leasedIp") or "")
+        except ValueError:
+            continue
+        in_old = any(lo <= lip <= hi for lo, hi in old)
+        in_new = any(lo <= lip <= hi for lo, hi in pools)
+        if in_old and not in_new:
+            moved.append({"ip": str(lip), "mac": lease.get("macAddress"), "hostname": lease.get("clientHostName")})
+
+    summary = {
+        "action": "set_pools",
+        "server": server,
+        "pools_before": [f"{lo}-{hi}" for lo, hi in old],
+        "pools_after": [f"{lo}-{hi}" for lo, hi in pools],
+        "addresses_before": sum(int(hi) - int(lo) + 1 for lo, hi in old),
+        "addresses_after": sum(int(hi) - int(lo) + 1 for lo, hi in pools),
+        "dynamic_leases_outside_new_pools": moved,
+    }
+    if call.data[ATTR_DRY_RUN]:
+        return {**summary, "dry_run": True}
+
+    try:
+        await coordinator.client.patch_dhcp_server_v4(server, {"addressPools": new_pools})
+    except SophosForbiddenError as err:
+        raise _err("no_write_permission") from err
+    except SophosApiError as err:
+        raise _err("firewall_refused", status=err.status, detail=err.body[:300]) from err
+    except SophosError as err:
+        await coordinator.async_request_refresh()
+        raise HomeAssistantError(
+            f"Sophos: {err}. The change may have been applied; check the reservations sensor."
+        ) from err
+
+    after = await _read_server(coordinator, server)
+    got = sorted((p.get("startAddressIpv4"), p.get("endAddressIpv4")) for p in after.get("addressPools") or [])
+    want = sorted((p["startAddressIpv4"], p["endAddressIpv4"]) for p in new_pools)
+    unchanged = _core(after, _VOLATILE_POOLS) == _core(before, _VOLATILE_POOLS)
+    await coordinator.async_request_refresh()
+    result = {**summary, "as_expected": got == want, "rest_of_server_unchanged": unchanged, "dry_run": False}
+    _LOGGER.info("DHCP set_pools on %s: %s", server, result)
+    if got != want or not unchanged:
+        raise HomeAssistantError(
+            f"Sophos: the firewall accepted the change but the read-back differs: {result}"
+        )
+    return result
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the actions (once for the domain)."""
-    if hass.services.has_service(DOMAIN, SERVICE_ADD_RESERVATION):
+    if hass.services.has_service(DOMAIN, SERVICE_SET_POOLS):
         return
 
     async def add(call: ServiceCall) -> ServiceResponse:
@@ -264,5 +363,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN, SERVICE_REMOVE_RESERVATION, remove, schema=REMOVE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def set_pools(call: ServiceCall) -> ServiceResponse:
+        return await _set_pools(hass, call)
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_SET_POOLS, set_pools, schema=POOLS_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )

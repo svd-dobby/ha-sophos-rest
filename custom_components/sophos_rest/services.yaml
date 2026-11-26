@@ -52,3 +52,25 @@ remove_dhcp_reservation:
       default: false
       selector:
         boolean:
+
+set_dhcp_pools:
+  fields:
+    config_entry_id:
+      selector:
+        config_entry:
+          integration: sophos_rest
+    server:
+      required: true
+      example: GuestAccess_DHCP
+      selector:
+        text:
+    pools:
+      required: true
+      example: '["10.255.0.100-10.255.0.200"]'
+      selector:
+        text:
+          multiple: true
+    dry_run:
+      default: false
+      selector:
+        boolean:

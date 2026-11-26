@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.0 (26 November 2026)
+- New action `sophos_rest.set_dhcp_pools`: replaces the dynamic pools of a DHCP server (only on servers allowed in the options). Checks: valid ranges, no overlap between pools, no reservation inside a pool. The response lists the dynamic leases that fall outside the new pools. Writes only `addressPools`, reads back and verifies. `dry_run` supported.
+
 ## 0.7.0 (26 November 2026)
 - First write features: actions `sophos_rest.add_dhcp_reservation` and `sophos_rest.remove_dhcp_reservation`.
   - Only on DHCP servers selected in the integration options (none by default).

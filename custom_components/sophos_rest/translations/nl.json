@@ -226,6 +226,28 @@
           "description": "Alleen controleren en tonen wat er zou veranderen; er wordt niets geschreven."
         }
       }
+    },
+    "set_dhcp_pools": {
+      "name": "DHCP-bereiken instellen",
+      "description": "Vervangt de dynamische bereiken van een DHCP-server. Alleen op servers die in de opties toegelaten zijn; er mag geen reservering in een bereik liggen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Alleen nodig als er meer dan één firewall gekoppeld is."
+        },
+        "server": {
+          "name": "DHCP-server",
+          "description": "Naam van de DHCP-server, bv. Default_DHCP_Server."
+        },
+        "pools": {
+          "name": "Bereiken",
+          "description": "Een of meer bereiken als begin-eind, bv. 192.168.1.200-192.168.1.250."
+        },
+        "dry_run": {
+          "name": "Droge proef",
+          "description": "Alleen controleren en tonen wat er zou veranderen; er wordt niets geschreven."
+        }
+      }
     }
   },
   "exceptions": {
@@ -273,6 +295,15 @@
     },
     "firewall_refused": {
       "message": "De firewall weigerde de wijziging (HTTP {status}): {detail}"
+    },
+    "invalid_pool": {
+      "message": "Ongeldig bereik: {pool} (gebruik begin-eind, begin niet na eind)"
+    },
+    "pools_overlap": {
+      "message": "Bereiken overlappen: {a} en {b}"
+    },
+    "reservation_in_pool": {
+      "message": "Reservering {name} ({ip}) ligt in het bereik {start}-{end}; verplaats ze eerst"
     }
   }
 }
