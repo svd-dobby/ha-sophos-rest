@@ -96,6 +96,12 @@
       },
       "last_snmp_trap": {
         "name": "Laatste SNMP-trap"
+      },
+      "http_hits": {
+        "name": "Webverzoeken"
+      },
+      "smtp_hits": {
+        "name": "SMTP-verzoeken"
       }
     },
     "binary_sensor": {

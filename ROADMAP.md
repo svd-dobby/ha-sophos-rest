@@ -47,6 +47,15 @@ Own SNMP v2c client, community in the integration options. Verified on the firew
 
 Not used yet: HTTP/FTP/mail hit counters (`.2.7.0` to `.2.9.x`), wireless access points (`.7.1`).
 
+### Checked against SOPHOS-XG-MIB (26 November 2026)
+
+Stefaan supplied the official MIB (revision 2018-12-18 plus the system health part; not stored in this repo, it is Sophos' file). Compared with what the integration reads and with a live walk of the XGS 138:
+
+- Traps: one notification only, `sfosNotification` (`...5.1.8.1.1`), with device type, firmware, appliance key, hostname, date and `sfosTrapMessage` (`...5.1.8.1.2`, the raw log line). The `Alert_Id` inside the text is not in the MIB but is fixed per kind of alert. Handled since 0.10.1.
+- `...5.1.1.4` is the appliance key, not a serial number (the integration calls it `serial` and keeps it private).
+- Added in 0.11.0: disk, memory and swap capacity (MB, as attribute), HTTP and SMTP hit counters (`...2.7`, `...2.9.3`).
+- Not used: FTP, POP3 and IMAP hits (always 0 here), captive portal user count (`...2.6`, same as the REST logged-in users), HA (`...4`, HA disabled), IPsec policy table (`...6.1.2`), WiFi APs and clients (`...7`, empty, no Sophos APs), power supply table (`...9.4`, empty on the XGS 138). PoE voltage and current (`...9.5`) are 0 with nothing connected.
+
 ## Verified read endpoints (25 November 2026, profile HA-API with read access on everything)
 
 Checked with read-only GET requests from HA-test. Paging on collections: `?pageSize=100&page=N` (default page size 50, maximum 100); the response has `pages` with `current`, `size`, `maxSize`. The leases list uses a different paging object (`fromKey`, `size`, `maxSize`).

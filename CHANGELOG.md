@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0 (26 November 2026)
+- New SNMP sensors: web requests (HTTP proxy hits) and SMTP requests, counters since boot (total increasing).
+- The sensors for disk, memory and swap use get the capacity in MB as attribute `capacity_mb`.
+- Checked against the official SOPHOS-XG-MIB; see ROADMAP.md.
+
 ## 0.10.1 (26 November 2026)
 - SNMP traps from Sophos: the alert text is split into `alert_id` and `alert_text`; `message` now holds only the alert text. Sophos sends every alert with the same trap OID (`1.3.6.1.4.1.2604.5.1.8.1.1`), so the text is what tells alerts apart.
 - The fixed device info Sophos adds to every trap (hostname, model, firmware, serial number, date) is left out of the event and the sensor; the serial number stays private.

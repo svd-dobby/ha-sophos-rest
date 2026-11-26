@@ -381,9 +381,15 @@ def snmp_interfaces(rest: SophosCoordinator, snmp: SnmpCoordinator) -> list[str]
 
 SYSTEM_SENSORS: dict[str, dict[str, Any]] = {
     "cpu": {"field": "cpu_percent", "unit": PERCENTAGE, "icon": "mdi:cpu-64-bit"},
-    "memory": {"field": "memory_percent", "unit": PERCENTAGE, "icon": "mdi:memory"},
-    "swap": {"field": "swap_percent", "unit": PERCENTAGE, "icon": "mdi:memory", "diag": True},
-    "disk": {"field": "disk_percent", "unit": PERCENTAGE, "icon": "mdi:harddisk"},
+    "memory": {"field": "memory_percent", "unit": PERCENTAGE, "icon": "mdi:memory",
+               "capacity": "memory_capacity_mb"},
+    "swap": {"field": "swap_percent", "unit": PERCENTAGE, "icon": "mdi:memory", "diag": True,
+             "capacity": "swap_capacity_mb"},
+    "disk": {"field": "disk_percent", "unit": PERCENTAGE, "icon": "mdi:harddisk",
+             "capacity": "disk_capacity_mb"},
+    # Hit counters of the web and mail proxies (64-bit, since boot).
+    "http_hits": {"field": "http_hits", "icon": "mdi:web", "total": True},
+    "smtp_hits": {"field": "smtp_hits", "icon": "mdi:email-fast-outline", "total": True, "diag": True},
     "cpu_temperature": {"field": "cpu_temperature", "unit": UnitOfTemperature.CELSIUS,
                         "class": SensorDeviceClass.TEMPERATURE},
     "npu_temperature": {"field": "npu_temperature", "unit": UnitOfTemperature.CELSIUS,
@@ -409,8 +415,11 @@ class SnmpSystemSensor(SophosSnmpEntity, SensorEntity):
             self._attr_icon = spec["icon"]
         if spec.get("diag"):
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
-        if not spec.get("text") and spec.get("class") != SensorDeviceClass.TIMESTAMP:
+        if spec.get("total"):
+            self._attr_state_class = SensorStateClass.TOTAL_INCREASING
+        elif not spec.get("text") and spec.get("class") != SensorDeviceClass.TIMESTAMP:
             self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._capacity = spec.get("capacity")
         self._boot = None
 
     @property
@@ -429,6 +438,12 @@ class SnmpSystemSensor(SophosSnmpEntity, SensorEntity):
                 self._boot = boot
             return self._boot
         return value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        if self._capacity is None or self.coordinator.data is None:
+            return None
+        return {"capacity_mb": self.coordinator.data.system.get(self._capacity)}
 
 
 class SnmpTrafficSensor(SophosSnmpEntity, SensorEntity):

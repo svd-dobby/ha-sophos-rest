@@ -2,7 +2,7 @@
 
 Custom integration `sophos_rest` for Sophos Firewall (SFOS v23 and later). It reads the firewall configuration through the REST API and the live values through SNMP. A few carefully guarded actions can change the DHCP configuration.
 
-Current version: **0.10.1**. It is tested on a test Home Assistant against an XGS 138 with SFOS 23.0. It is meant to replace the core `sophos_firewall` integration (XML API).
+Current version: **0.11.0**. It is tested on a test Home Assistant against an XGS 138 with SFOS 23.0. It is meant to replace the core `sophos_firewall` integration (XML API).
 
 ## What it provides
 
@@ -10,7 +10,7 @@ The entities are grouped into sub-devices under one firewall device.
 
 | Device | Source | Entities |
 |---|---|---|
-| Firewall (main) | REST, SNMP | CPU, memory, swap and disk use, CPU and NPU temperature, fan speed, last boot, firmware, IPS and web category versions, logged-in users |
+| Firewall (main) | REST, SNMP | CPU, memory, swap and disk use (with capacity), CPU and NPU temperature, fan speed, web and SMTP request counters, last boot, firmware, IPS and web category versions, logged-in users, last SNMP trap |
 | DHCP | REST | Per server: reservations (with a list), free addresses in the dynamic pools, active leases, dynamic leases (devices without a reservation) |
 | Firewall rules | REST | One binary sensor per rule (on = enabled) |
 | NAT rules | REST | One binary sensor per rule (on = enabled) |
