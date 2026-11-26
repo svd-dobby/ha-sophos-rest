@@ -30,7 +30,10 @@ ATTR_DRY_RUN = "dry_run"
 SERVICE_ADD_RESERVATION = "add_dhcp_reservation"
 SERVICE_REMOVE_RESERVATION = "remove_dhcp_reservation"
 SERVICE_SET_POOLS = "set_dhcp_pools"
+SERVICE_SET_LEASE_TIME = "set_dhcp_lease_time"
 ATTR_POOLS = "pools"
+ATTR_DEFAULT_LEASE = "default_lease_time"
+ATTR_MAX_LEASE = "max_lease_time"
 
 _MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 _NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,50}$")
@@ -38,6 +41,7 @@ _NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,50}$")
 # Fields that are expected to change on a write; everything else must stay equal.
 _VOLATILE_RES = ("clientReservations", "updatedAt", "createdAt")
 _VOLATILE_POOLS = ("addressPools", "updatedAt", "createdAt")
+_VOLATILE_LEASE = ("defaultLifetime", "maxLifetime", "updatedAt", "createdAt")
 
 _BASE_SCHEMA = {
     vol.Optional(ATTR_CONFIG_ENTRY): cv.string,
@@ -56,6 +60,14 @@ POOLS_SCHEMA = vol.Schema(
     {
         **_BASE_SCHEMA,
         vol.Required(ATTR_POOLS): vol.All(cv.ensure_list, [cv.string], vol.Length(min=1, max=16)),
+    }
+)
+LEASE_SCHEMA = vol.Schema(
+    {
+        **_BASE_SCHEMA,
+        # Minutes, as in the Sophos web console.
+        vol.Required(ATTR_DEFAULT_LEASE): vol.All(vol.Coerce(int), vol.Range(min=1, max=43200)),
+        vol.Required(ATTR_MAX_LEASE): vol.All(vol.Coerce(int), vol.Range(min=1, max=43200)),
     }
 )
 REMOVE_SCHEMA = vol.Schema(
@@ -346,9 +358,62 @@ async def _set_pools(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     return result
 
 
+async def _set_lease_time(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    coordinator = _coordinator(hass, call)
+    server = call.data[ATTR_SERVER]
+    _check_allowed(coordinator, server)
+    default, maximum = call.data[ATTR_DEFAULT_LEASE], call.data[ATTR_MAX_LEASE]
+    if maximum < default:
+        raise _err("lease_max_below_default", default=default, maximum=maximum)
+
+    before = await _read_server(coordinator, server)
+    summary = {
+        "action": "set_lease_time",
+        "server": server,
+        "default_lease_time_before": before.get("defaultLifetime"),
+        "max_lease_time_before": before.get("maxLifetime"),
+        "default_lease_time_after": default,
+        "max_lease_time_after": maximum,
+        "unit": "minutes",
+    }
+    if call.data[ATTR_DRY_RUN]:
+        return {**summary, "dry_run": True}
+
+    try:
+        await coordinator.client.patch_dhcp_server_v4(
+            server, {"defaultLifetime": default, "maxLifetime": maximum}
+        )
+    except SophosForbiddenError as err:
+        raise _err("no_write_permission") from err
+    except SophosApiError as err:
+        raise _err("firewall_refused", status=err.status, detail=err.body[:300]) from err
+    except SophosError as err:
+        await coordinator.async_request_refresh()
+        raise HomeAssistantError(
+            f"Sophos: {err}. The change may have been applied; read the server back."
+        ) from err
+
+    after = await _read_server(coordinator, server)
+    got = (int(after.get("defaultLifetime") or 0), int(after.get("maxLifetime") or 0))
+    unchanged = _core(after, _VOLATILE_LEASE) == _core(before, _VOLATILE_LEASE)
+    await coordinator.async_request_refresh()
+    result = {
+        **summary,
+        "as_expected": got == (default, maximum),
+        "rest_of_server_unchanged": unchanged,
+        "dry_run": False,
+    }
+    _LOGGER.info("DHCP set_lease_time on %s: %s", server, result)
+    if got != (default, maximum) or not unchanged:
+        raise HomeAssistantError(
+            f"Sophos: the firewall accepted the change but the read-back differs: {result}"
+        )
+    return result
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the actions (once for the domain)."""
-    if hass.services.has_service(DOMAIN, SERVICE_SET_POOLS):
+    if hass.services.has_service(DOMAIN, SERVICE_SET_LEASE_TIME):
         return
 
     async def add(call: ServiceCall) -> ServiceResponse:
@@ -371,5 +436,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     hass.services.async_register(
         DOMAIN, SERVICE_SET_POOLS, set_pools, schema=POOLS_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+
+    async def set_lease_time(call: ServiceCall) -> ServiceResponse:
+        return await _set_lease_time(hass, call)
+
+    hass.services.async_register(
+        DOMAIN, SERVICE_SET_LEASE_TIME, set_lease_time, schema=LEASE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )

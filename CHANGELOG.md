@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.0 (26 November 2026)
+- New action `sophos_rest.set_dhcp_lease_time`: sets the default and maximum lease time (minutes) of a DHCP server (only on servers allowed in the options). Writes only `defaultLifetime` and `maxLifetime`, reads back and verifies. `dry_run` shows the current values. Meant for a short lease time while addresses move; devices pick it up at their next renewal.
+
 ## 0.8.0 (26 November 2026)
 - New action `sophos_rest.set_dhcp_pools`: replaces the dynamic pools of a DHCP server (only on servers allowed in the options). Checks: valid ranges, no overlap between pools, no reservation inside a pool. The response lists the dynamic leases that fall outside the new pools. Writes only `addressPools`, reads back and verifies. `dry_run` supported.
 

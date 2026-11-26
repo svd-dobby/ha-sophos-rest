@@ -248,6 +248,32 @@
           "description": "Only check and show what would change; nothing is written."
         }
       }
+    },
+    "set_dhcp_lease_time": {
+      "name": "Set DHCP lease time",
+      "description": "Changes the default and maximum lease time of a DHCP server, in minutes. Only on servers allowed in the options. Devices pick up the new time at their next renewal.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Only needed when more than one firewall is linked."
+        },
+        "server": {
+          "name": "DHCP server",
+          "description": "Name of the DHCP server, for example Default_DHCP_Server."
+        },
+        "default_lease_time": {
+          "name": "Default lease time",
+          "description": "Lease time in minutes that clients get by default."
+        },
+        "max_lease_time": {
+          "name": "Maximum lease time",
+          "description": "Longest lease time in minutes a client may ask for; at least the default."
+        },
+        "dry_run": {
+          "name": "Dry run",
+          "description": "Only check and show what would change; nothing is written."
+        }
+      }
     }
   },
   "exceptions": {
@@ -304,6 +330,9 @@
     },
     "reservation_in_pool": {
       "message": "Reservation {name} ({ip}) lies inside the pool {start}-{end}; move it first"
+    },
+    "lease_max_below_default": {
+      "message": "Maximum lease time ({maximum} min) is shorter than the default lease time ({default} min)"
     }
   }
 }

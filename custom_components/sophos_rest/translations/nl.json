@@ -248,6 +248,32 @@
           "description": "Alleen controleren en tonen wat er zou veranderen; er wordt niets geschreven."
         }
       }
+    },
+    "set_dhcp_lease_time": {
+      "name": "DHCP-leasetijd instellen",
+      "description": "Wijzigt de standaard en maximale leasetijd van een DHCP-server, in minuten. Alleen op servers die in de opties toegelaten zijn. Toestellen nemen de nieuwe tijd over bij hun volgende vernieuwing.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Firewall",
+          "description": "Alleen nodig als er meer dan één firewall gekoppeld is."
+        },
+        "server": {
+          "name": "DHCP-server",
+          "description": "Naam van de DHCP-server, bv. Default_DHCP_Server."
+        },
+        "default_lease_time": {
+          "name": "Standaard leasetijd",
+          "description": "Leasetijd in minuten die toestellen standaard krijgen."
+        },
+        "max_lease_time": {
+          "name": "Maximale leasetijd",
+          "description": "Langste leasetijd in minuten die een toestel mag vragen; minstens de standaard."
+        },
+        "dry_run": {
+          "name": "Droge proef",
+          "description": "Alleen controleren en tonen wat er zou veranderen; er wordt niets geschreven."
+        }
+      }
     }
   },
   "exceptions": {
@@ -304,6 +330,9 @@
     },
     "reservation_in_pool": {
       "message": "Reservering {name} ({ip}) ligt in het bereik {start}-{end}; verplaats ze eerst"
+    },
+    "lease_max_below_default": {
+      "message": "Maximale leasetijd ({maximum} min) is korter dan de standaard leasetijd ({default} min)"
     }
   }
 }
